@@ -2,6 +2,8 @@ import { redirect } from '@sveltejs/kit';
 import { HALF_YEARS, isValidPoints } from '@oberstufen-planer/abi-engine-bw';
 import { toLocalDate } from '$lib/calendar.ts';
 import { listEvents } from '$lib/server/events.ts';
+import { tasks } from '$lib/server/db/schema.ts';
+import { asc, eq } from 'drizzle-orm';
 import { getDb } from '$lib/server/instance.ts';
 import { getPlan } from '$lib/server/plan.ts';
 import type { PageServerLoad } from './$types';
@@ -42,6 +44,13 @@ export const load: PageServerLoad = () => {
 	const ranked = subjects.filter((s) => s.avg !== null).sort((a, b) => b.avg! - a.avg!);
 	return {
 		profile: all.profile,
+		openTasks: db
+			.select()
+			.from(tasks)
+			.where(eq(tasks.done, false))
+			.orderBy(asc(tasks.due))
+			.all()
+			.slice(0, 3),
 		nextEvents: listEvents(db)
 			.filter((e) => (e.end ?? e.start).slice(0, 10) >= toLocalDate(new Date()))
 			.slice(0, 4)

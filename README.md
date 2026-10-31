@@ -2,14 +2,17 @@
 
 Ein selbst gehosteter Abitur-Planer für **Baden-Württemberg**, für eine einzelne Person, als Docker-Container.
 
-- Notenerfassung pro Halbjahr mit Leistungstypen und Gewichtung
-- Berechnung von Block I und Block II, Gesamtpunktzahl und Abiturnote nach AGVO, Prüfung der Zulassungsbedingungen
-- Automatische Wahl der anzurechnenden Kurse und der beiden doppelt gewichteten Leistungsfächer
-- Hochrechnung, „Was wäre wenn“-Szenarien, Zielrechner
-- Klausurenkalender mit iCal-Feed, Erinnerungen, Stundenplan, Aufgaben und Lernziele
-- PWA: lässt sich auf dem Handy installieren, keine Telemetrie
+- **Noten:** Einzelnoten pro Halbjahr mit Notenarten und Gewichtung, angekündigte („offene“) Noten, Zeugnisnoten und eigene Prognosen
+- **Abiturnote:** Block I und Block II nach dem Leitfaden des Kultusministeriums, Prüfung aller Zulassungsbedingungen, besondere Lernleistung
+- **Anrechnung:** wählt automatisch die besten 40 Kurse und die beiden doppelt gewichteten Leistungsfächer – oder du legst es selbst fest
+- **Hochrechnung:** „Was wäre wenn“ für jede Note und Prüfung, Zielrechner („Was brauche ich für eine 1,5?“)
+- **Übersicht:** hochgerechnete Abiturnote, Verlauf pro Fach, Unterkurse, nächste Termine
+- **Kalender:** Klausuren, GFS und Prüfungen, Import des Schulkalenders (.ics), Kalender-Abo fürs Handy, Erinnerungen per Push oder [ntfy](https://ntfy.sh)
+- **Stundenplan, Aufgaben, Lernziele**
+- **Daten:** Sicherung als JSON-Datei, druckbare Zusammenfassung (PDF)
+- Als App aufs Handy installierbar, offline lesbar, keine Telemetrie
 
-**Status:** Meilenstein M0 (Grundgerüst: Login, Datenbank, Docker, CI). Der Plan steht in [docs/PLAN.md](docs/PLAN.md).
+Der ursprüngliche Plan steht in [docs/PLAN.md](docs/PLAN.md).
 
 > Planungshilfe – verbindlich ist die Berechnung der Schule.
 
@@ -46,12 +49,42 @@ Die App läuft dann auf <http://localhost:3000>. Die Daten liegen im Docker-Volu
 | `PORT`              | `3000`          | Port im Container                                                                                         |
 | `TZ`                | `Europe/Berlin` | Zeitzone für Termine und Erinnerungen                                                                     |
 
-Für den Zugriff von außen gehört ein Reverse-Proxy mit HTTPS davor (z. B. Caddy). Ohne HTTPS funktionieren später Installation als App und Push-Erinnerungen nicht.
+Für den Zugriff von außen gehört ein Reverse-Proxy mit HTTPS davor (z. B. Caddy). Ohne HTTPS funktionieren die Installation als App und Push-Erinnerungen nicht (Ausnahme: `localhost`).
+
+Beispiel für Caddy (`Caddyfile`):
+
+```
+abi.example.org {
+	reverse_proxy oberstufen-planer:3000
+}
+```
+
+### Erste Schritte
+
+1. Anmelden und unter **Einrichtung** Fächer, Leistungsfächer und mündliche Prüfungsfächer wählen.
+2. Unter **Mehr → Einstellungen** die Notenarten und ihre Gewichtung anpassen (Standard: Klausur 2, Mündlich 1, GFS 1).
+3. Unter **Noten** Einzelnoten oder direkt die Zeugnisnoten eintragen.
+4. Optional: **Kalender** befüllen, Erinnerungen einrichten, App zum Home-Bildschirm hinzufügen.
+
+### Erinnerungen
+
+- **Push:** unter Einstellungen „Push auf diesem Gerät aktivieren“. Braucht HTTPS. Auf dem iPhone muss die App vorher zum Home-Bildschirm hinzugefügt werden.
+- **ntfy:** Server und Thema eintragen und dasselbe Thema in der ntfy-App abonnieren. Auf `ntfy.sh` einen schwer zu erratenden Themennamen wählen.
+- Der Server prüft jede Minute, ob Erinnerungen fällig sind.
+
+### Kalender-Abo
+
+Unter Einstellungen steht eine geheime Adresse (`…/kalender/feed/<token>.ics`), die du im Kalender deines Handys abonnieren kannst. Sie funktioniert ohne Anmeldung – also nicht weitergeben. Bei Bedarf lässt sich eine neue Adresse erzeugen.
 
 ### Backup
 
+Unter **Einstellungen → Daten** lässt sich eine Sicherung als JSON-Datei herunterladen und wieder einspielen. Alternativ die SQLite-Datei sichern:
+
 ```bash
 docker compose exec oberstufen-planer sh -c 'cp /data/app.db /data/backup.db'
+```
+
+```bash
 docker compose cp oberstufen-planer:/data/backup.db ./backup.db
 ```
 

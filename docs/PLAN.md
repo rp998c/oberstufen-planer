@@ -185,7 +185,7 @@ services:
 | M2 ✅ | UI: setup, subjects, grade types, grade entry, half-year grades | 1 week |
 | M3 ✅ | Dashboard, what-if/forecast, target calculator, course-selection view | 1 week |
 | M4 ✅ | Calendar + iCal import/feed, reminders (Web Push/ntfy), PWA/offline | 4–5 days |
-| M5 | Timetable, tasks, study goals, JSON/PDF export → **v1.0** | 4–5 days |
+| M5 ✅ | Timetable, tasks, study goals, JSON/PDF export → **v1.0** | 4–5 days |
 
 About **5 weeks** in total.
 
