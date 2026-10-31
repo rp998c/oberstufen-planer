@@ -181,7 +181,7 @@ services:
 | # | Content | Estimate |
 |---|---|---|
 | M0 ✅ | Repo, CI (lint, test, image build to GHCR), Docker skeleton, password login, healthcheck | 1–2 days |
-| M1 | `abi-engine-bw`: Block I/II, rule checks, grade table, optimiser + tests | 4–5 days |
+| M1 ✅ | `abi-engine-bw`: Block I/II, rule checks, grade table, optimiser + tests | 4–5 days |
 | M2 | UI: setup, subjects, grade types, grade entry, half-year grades | 1 week |
 | M3 | Dashboard, what-if/forecast, target calculator, course-selection view | 1 week |
 | M4 | Calendar + iCal import/feed, reminders (Web Push/ntfy), PWA/offline | 4–5 days |
