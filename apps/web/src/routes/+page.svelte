@@ -83,6 +83,30 @@
 	{/if}
 </section>
 
+{#if data.openTasks.length}
+	<section class="card next">
+		<div class="next-head">
+			<h2>Offene Aufgaben</h2>
+			<a href="/aufgaben">Alle →</a>
+		</div>
+		<ul>
+			{#each data.openTasks as t (t.id)}
+				<li>
+					<span class="when"
+						>{t.due
+							? new Date(t.due + 'T00:00').toLocaleDateString('de-DE', {
+									day: '2-digit',
+									month: '2-digit'
+								})
+							: '–'}</span
+					>
+					<span class="what"><strong>{t.title}</strong></span>
+				</li>
+			{/each}
+		</ul>
+	</section>
+{/if}
+
 <section>
 	<h2>Fächer</h2>
 	<p class="muted small">

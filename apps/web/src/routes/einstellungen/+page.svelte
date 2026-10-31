@@ -197,7 +197,52 @@
 	</form>
 </section>
 
+<section class="card">
+	<h2>Daten</h2>
+	<p class="muted">
+		Sichere alle Fächer, Noten, Termine und Einstellungen als Datei – z. B. bevor du den Server
+		umziehst. Beim Einspielen werden die aktuellen Daten vollständig ersetzt.
+	</p>
+	<div class="actions">
+		<a class="button" href="/api/export" download>Sicherung herunterladen</a>
+		<a href="/zusammenfassung">Zusammenfassung drucken / als PDF</a>
+	</div>
+	<form
+		method="POST"
+		action="?/restore"
+		enctype="multipart/form-data"
+		use:enhance
+		class="actions restore"
+		onsubmit={(e) => {
+			if (!confirm('Alle aktuellen Daten durch die Sicherung ersetzen?')) e.preventDefault();
+		}}
+	>
+		<input name="file" type="file" accept="application/json,.json" aria-label="Sicherungsdatei" />
+		<button type="submit" class="secondary">Sicherung einspielen</button>
+		{#if form?.saved === 'restore'}<span class="ok">Sicherung eingespielt.</span>{/if}
+	</form>
+</section>
+
 <style>
+	.button {
+		background: var(--accent);
+		color: var(--accent-text);
+		padding: 0.55rem 0.9rem;
+		border-radius: 8px;
+		text-decoration: none;
+		font-weight: 600;
+	}
+	.restore {
+		margin-top: 1rem;
+	}
+	.restore input {
+		flex: 1 1 12rem;
+		min-width: 0;
+		max-width: 100%;
+	}
+	.ok {
+		color: var(--accent);
+	}
 	.small {
 		font-size: 0.85rem;
 	}

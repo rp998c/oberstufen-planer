@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { REMINDER_PRESETS } from '$lib/calendar.ts';
+import { BackupError, importData } from '$lib/server/backup.ts';
 import { getProfile, listGradeTypes, setSetting } from '$lib/server/data.ts';
 import { gradeTypes, grades, pushSubscriptions } from '$lib/server/db/schema.ts';
 import { getDefaultReminders, getFeedToken } from '$lib/server/events.ts';
@@ -115,5 +116,24 @@ export const actions: Actions = {
 	feed: () => {
 		getFeedToken(getDb(), true);
 		return { saved: 'feed' };
+	},
+	restore: async ({ request }) => {
+		const file = (await request.formData()).get('file');
+		if (!(file instanceof File) || file.size === 0)
+			return fail(400, { error: 'Bitte eine Sicherungsdatei wählen.' });
+		if (file.size > 20 * 1024 * 1024) return fail(400, { error: 'Die Datei ist zu groß.' });
+		let json: unknown;
+		try {
+			json = JSON.parse(await file.text());
+		} catch {
+			return fail(400, { error: 'Die Datei ist kein gültiges JSON.' });
+		}
+		try {
+			importData(getDb(), json);
+		} catch (e) {
+			if (e instanceof BackupError) return fail(400, { error: e.message });
+			throw e;
+		}
+		return { saved: 'restore' };
 	}
 };

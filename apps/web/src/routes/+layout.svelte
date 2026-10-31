@@ -12,11 +12,23 @@
 		{ href: '/abitur', label: 'Abitur' },
 		{ href: '/kalender', label: 'Kalender' },
 		{ href: '/prognose', label: 'Was wäre wenn' },
-		{ href: '/faecher', label: 'Fächer' },
-		{ href: '/einstellungen', label: 'Einstellungen' }
+		{ href: '/mehr', label: 'Mehr' }
+	];
+	const MORE = [
+		'/mehr',
+		'/stundenplan',
+		'/aufgaben',
+		'/ziele',
+		'/faecher',
+		'/einstellungen',
+		'/zusammenfassung'
 	];
 	const current = (href: string) =>
-		href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href);
+		href === '/'
+			? page.url.pathname === '/'
+			: href === '/mehr'
+				? MORE.some((m) => page.url.pathname.startsWith(m))
+				: page.url.pathname.startsWith(href);
 </script>
 
 <header>

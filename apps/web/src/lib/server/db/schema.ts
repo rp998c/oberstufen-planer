@@ -1,4 +1,4 @@
-import { integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 /** Login sessions. `id` is the SHA-256 of the cookie token, so a leaked DB can't be used to log in. */
 export const sessions = sqliteTable('sessions', {
@@ -124,3 +124,43 @@ export const sentReminders = sqliteTable(
 	},
 	(t) => [primaryKey({ columns: [t.eventId, t.minutes] })]
 );
+
+/** One lesson in the weekly timetable. */
+export const timetableSlots = sqliteTable(
+	'timetable_slots',
+	{
+		id: text('id').primaryKey(),
+		/** 1 = Monday … 6 = Saturday */
+		weekday: integer('weekday').notNull(),
+		/** Lesson number, 1-based */
+		period: integer('period').notNull(),
+		subjectId: text('subject_id')
+			.notNull()
+			.references(() => subjects.id, { onDelete: 'cascade' }),
+		room: text('room').notNull().default('')
+	},
+	(t) => [uniqueIndex('timetable_slot_unique').on(t.weekday, t.period)]
+);
+
+/** To-dos ("Aufgaben"), optionally linked to a subject. */
+export const tasks = sqliteTable('tasks', {
+	id: text('id').primaryKey(),
+	subjectId: text('subject_id').references(() => subjects.id, { onDelete: 'set null' }),
+	title: text('title').notNull(),
+	/** ISO date */
+	due: text('due'),
+	done: integer('done', { mode: 'boolean' }).notNull().default(false),
+	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull()
+});
+
+/** Study goals ("Lernziele"), e.g. "Mathe: 12 Punkte im 3. Halbjahr". */
+export const studyGoals = sqliteTable('study_goals', {
+	id: text('id').primaryKey(),
+	subjectId: text('subject_id').references(() => subjects.id, { onDelete: 'set null' }),
+	title: text('title').notNull(),
+	targetPoints: integer('target_points'),
+	/** ISO date */
+	due: text('due'),
+	achieved: integer('achieved', { mode: 'boolean' }).notNull().default(false),
+	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull()
+});
