@@ -37,14 +37,14 @@ Die App läuft dann auf <http://localhost:3000>. Die Daten liegen im Docker-Volu
 
 ### Konfiguration
 
-| Variable            | Standard   | Bedeutung                                                                                                 |
-| ------------------- | ---------- | --------------------------------------------------------------------------------------------------------- |
-| `AUTH`              | `password` | `password`: Anmeldung mit einem Passwort. `none`: keine Anmeldung, z. B. hinter einem eigenen Auth-Proxy. |
-| `APP_PASSWORD_HASH` | –          | Argon2-Hash des Passworts (Pflicht bei `AUTH=password`)                                                   |
-| `ORIGIN`            | –          | Öffentliche Adresse, z. B. `https://abi.example.org`. Nötig, damit Formulare funktionieren.               |
-| `SESSION_DAYS`      | `90`       | Wie lange eine Anmeldung gültig bleibt (verlängert sich bei Nutzung)                                      |
-| `PORT`              | `3000`     | Port im Container                                                                                         |
-| `TZ`                | –          | Zeitzone, z. B. `Europe/Berlin`                                                                           |
+| Variable            | Standard        | Bedeutung                                                                                                 |
+| ------------------- | --------------- | --------------------------------------------------------------------------------------------------------- |
+| `AUTH`              | `password`      | `password`: Anmeldung mit einem Passwort. `none`: keine Anmeldung, z. B. hinter einem eigenen Auth-Proxy. |
+| `APP_PASSWORD_HASH` | –               | Argon2-Hash des Passworts (Pflicht bei `AUTH=password`)                                                   |
+| `ORIGIN`            | –               | Öffentliche Adresse, z. B. `https://abi.example.org`. Nötig, damit Formulare funktionieren.               |
+| `SESSION_DAYS`      | `90`            | Wie lange eine Anmeldung gültig bleibt (verlängert sich bei Nutzung)                                      |
+| `PORT`              | `3000`          | Port im Container                                                                                         |
+| `TZ`                | `Europe/Berlin` | Zeitzone für Termine und Erinnerungen                                                                     |
 
 Für den Zugriff von außen gehört ein Reverse-Proxy mit HTTPS davor (z. B. Caddy). Ohne HTTPS funktionieren später Installation als App und Push-Erinnerungen nicht.
 

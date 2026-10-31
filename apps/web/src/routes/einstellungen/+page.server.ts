@@ -1,13 +1,16 @@
 import { fail } from '@sveltejs/kit';
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
+import { REMINDER_PRESETS } from '$lib/calendar.ts';
 import { getProfile, listGradeTypes, setSetting } from '$lib/server/data.ts';
-import { gradeTypes, grades } from '$lib/server/db/schema.ts';
+import { gradeTypes, grades, pushSubscriptions } from '$lib/server/db/schema.ts';
+import { getDefaultReminders, getFeedToken } from '$lib/server/events.ts';
 import { FormError, intOrNull, num, str } from '$lib/server/form.ts';
 import { getDb } from '$lib/server/instance.ts';
+import { getNtfy, notify } from '$lib/server/notify.ts';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = () => {
+export const load: PageServerLoad = ({ url }) => {
 	const db = getDb();
 	const used = new Set(
 		db
@@ -18,7 +21,11 @@ export const load: PageServerLoad = () => {
 	);
 	return {
 		profile: getProfile(db),
-		gradeTypes: listGradeTypes(db).map((t) => ({ ...t, used: used.has(t.id) }))
+		gradeTypes: listGradeTypes(db).map((t) => ({ ...t, used: used.has(t.id) })),
+		feedUrl: `${url.origin}/kalender/feed/${getFeedToken(db)}.ics`,
+		ntfy: getNtfy(db),
+		reminderDefaults: getDefaultReminders(db),
+		pushDevices: db.select().from(pushSubscriptions).all().length
 	};
 };
 
@@ -67,5 +74,46 @@ export const actions: Actions = {
 		if (inUse) return fail(400, { error: 'Diese Notenart wird noch verwendet.' });
 		db.delete(gradeTypes).where(eq(gradeTypes.id, id)).run();
 		return { saved: 'types' };
+	},
+	ntfy: async ({ request }) => {
+		const fd = await request.formData();
+		return guard(() => {
+			const topic = str(fd, 'topic', { max: 64, label: 'Thema' });
+			const server = str(fd, 'server', { max: 200, label: 'Server' }) || 'https://ntfy.sh';
+			if (topic && !/^[\w-]+$/.test(topic))
+				throw new FormError('Das Thema darf nur Buchstaben, Ziffern, - und _ enthalten.');
+			if (!/^https?:\/\//.test(server))
+				throw new FormError('Der Server muss mit http:// oder https:// beginnen.');
+			const token = str(fd, 'token', { max: 200, label: 'Token' });
+			setSetting(getDb(), 'ntfy', topic ? { server, topic, ...(token ? { token } : {}) } : null);
+			return { saved: 'ntfy' };
+		});
+	},
+	reminders: async ({ request }) => {
+		const fd = await request.formData();
+		const allowed = new Set<number>(REMINDER_PRESETS.map((p) => p.minutes));
+		const values = fd
+			.getAll('reminders')
+			.map(Number)
+			.filter((m) => allowed.has(m));
+		setSetting(getDb(), 'reminderDefaults', values);
+		return { saved: 'reminders' };
+	},
+	test: async () => {
+		const count = await notify(getDb(), {
+			title: 'Oberstufen-Planer',
+			body: 'Test: Benachrichtigungen funktionieren.',
+			url: '/einstellungen'
+		});
+		return count > 0
+			? { saved: 'test', count }
+			: fail(400, {
+					error:
+						'Keine Benachrichtigung zugestellt – Push auf diesem Gerät aktivieren oder ntfy einrichten.'
+				});
+	},
+	feed: () => {
+		getFeedToken(getDb(), true);
+		return { saved: 'feed' };
 	}
 };

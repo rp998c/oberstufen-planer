@@ -84,3 +84,43 @@ export const exams = sqliteTable('exams', {
 	writtenForecast: integer('written_forecast'),
 	oralForecast: integer('oral_forecast')
 });
+
+/**
+ * Calendar entry. `start`/`end` are local times: "YYYY-MM-DD" for all-day entries,
+ * otherwise "YYYY-MM-DDTHH:mm". `reminders` = minutes before the start (all-day: 00:00).
+ */
+export const events = sqliteTable('events', {
+	id: text('id').primaryKey(),
+	subjectId: text('subject_id').references(() => subjects.id, { onDelete: 'set null' }),
+	title: text('title').notNull(),
+	/** 'klausur' | 'gfs' | 'abi' | 'sonstiges' */
+	kind: text('kind').notNull(),
+	start: text('start').notNull(),
+	end: text('end'),
+	allDay: integer('all_day', { mode: 'boolean' }).notNull().default(true),
+	note: text('note').notNull().default(''),
+	reminders: text('reminders', { mode: 'json' }).$type<number[]>().notNull().default([]),
+	/** UID of an imported iCal event, to update instead of duplicating on re-import. */
+	externalUid: text('external_uid').unique()
+});
+
+/** Web Push subscriptions of the user's devices. */
+export const pushSubscriptions = sqliteTable('push_subscriptions', {
+	endpoint: text('endpoint').primaryKey(),
+	p256dh: text('p256dh').notNull(),
+	auth: text('auth').notNull(),
+	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull()
+});
+
+/** Reminders already sent, so each one goes out only once. */
+export const sentReminders = sqliteTable(
+	'sent_reminders',
+	{
+		eventId: text('event_id')
+			.notNull()
+			.references(() => events.id, { onDelete: 'cascade' }),
+		minutes: integer('minutes').notNull(),
+		sentAt: integer('sent_at', { mode: 'timestamp_ms' }).notNull()
+	},
+	(t) => [primaryKey({ columns: [t.eventId, t.minutes] })]
+);
