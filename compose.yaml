@@ -1,11 +1,12 @@
 # Minimal setup – nothing to configure. Start with: docker compose up -d
-# Then open http://<server>:3000 and choose a password.
+# Then open http://<server>:<port> (default 3000) and choose a password.
 services:
   oberstufen-planer:
     image: ghcr.io/rp998c/oberstufen-planer:latest
     container_name: oberstufen-planer
     ports:
-      - '3000:3000'
+      - published: 3000 # ← Port auf deinem Server – hier ändern, z. B. 8080
+        target: 3000 # Port im Container – so lassen
     volumes:
       - data:/data
     restart: unless-stopped

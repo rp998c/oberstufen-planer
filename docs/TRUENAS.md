@@ -14,7 +14,8 @@ vorbereitet oder ausgedacht werden.
      oberstufen-planer:
        image: ghcr.io/rp998c/oberstufen-planer:latest
        ports:
-         - '3000:3000'
+         - published: 3000 # ← Port auf deinem TrueNAS – hier ändern, z. B. 8080
+           target: 3000 # Port im Container – so lassen
        volumes:
          - data:/data
        restart: unless-stopped
@@ -23,11 +24,13 @@ vorbereitet oder ausgedacht werden.
      data:
    ```
 
+   Ist Port 3000 schon belegt, einfach die Zahl hinter `published:` ändern.
+
 4. **Save** klicken. Nach kurzer Zeit steht die App auf **Running**.
 
 ## 2. Loslegen
 
-`http://<IP-deines-TrueNAS>:3000` im Browser öffnen, ein Passwort festlegen – fertig.
+`http://<IP-deines-TrueNAS>:3000` im Browser öffnen (bzw. mit deinem Port), ein Passwort festlegen – fertig.
 Danach führt die App durch die Fächerwahl.
 
 ## Optional
@@ -40,7 +43,8 @@ services:
   oberstufen-planer:
     image: ghcr.io/rp998c/oberstufen-planer:latest
     ports:
-      - '3000:3000'
+      - published: 3000 # Port auf deinem TrueNAS
+        target: 3000
     environment:
       PUID: 568
       PGID: 568
@@ -49,7 +53,8 @@ services:
     restart: unless-stopped
 ```
 
-**Anderer Port:** Ist Port 3000 schon belegt, die linke Zahl ändern, z. B. `'3080:3000'`.
+**Anderer Port:** Die Zahl hinter `published:` ist der Port, unter dem du die App erreichst – z. B.
+`published: 8080`, dann `http://<IP-deines-TrueNAS>:8080` öffnen. `target: 3000` bleibt immer gleich.
 
 **Passwort vergessen:** In TrueNAS bei der App auf **Shell** klicken und `reset-password`
 eingeben. Beim nächsten Aufruf fragt die App nach einem neuen Passwort; die Daten bleiben erhalten.
