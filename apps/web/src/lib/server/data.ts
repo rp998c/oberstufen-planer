@@ -2,17 +2,16 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
 import {
 	HALF_YEARS,
-	halfYearPoints,
 	type BllInput,
 	type Category,
 	type ExamKind,
 	type HalfYear,
-	type HalfYearPoints,
 	type Level,
 	type Overrides,
 	type PlanInput,
 	type SubjectInput
 } from '@oberstufen-planer/abi-engine-bw';
+import { courseView, type CourseView } from '@oberstufen-planer/app-core';
 import type { Db } from './db/index.ts';
 import { courses, exams, gradeTypes, grades, settings, subjects } from './db/schema.ts';
 
@@ -177,25 +176,7 @@ export function setExam(db: Db, subjectId: string, values: Partial<Omit<ExamRow,
 
 // ---- view model -------------------------------------------------------------------------
 
-/** Where the effective half-year points come from. */
-export type CourseSource = 'zeugnis' | 'prognose' | 'noten' | 'offen';
-
-export interface CourseView {
-	halfYear: HalfYear;
-	/** Report-card grade. */
-	points: number | null;
-	/** Own estimate. */
-	forecast: number | null;
-	/** Calculated from the entered grades only. */
-	fromGrades: HalfYearPoints | null;
-	/** Calculated from entered grades plus forecasts of open grades. */
-	fromGradesProjected: HalfYearPoints | null;
-	gradeCount: number;
-	openCount: number;
-	source: CourseSource;
-	/** Points used for the calculation (null = engine fills in the average). */
-	effective: number | null;
-}
+export { courseView, type CourseSource, type CourseView } from '@oberstufen-planer/app-core';
 
 export interface SubjectView extends SubjectRow {
 	category: Category;
@@ -212,51 +193,6 @@ export interface AllData {
 	grades: GradeRow[];
 	bll: BllInput;
 	overrides: Overrides;
-}
-
-export function courseView(
-	course: CourseRow,
-	courseGrades: GradeRow[],
-	types: GradeTypeRow[]
-): CourseView {
-	const actual = courseGrades.filter((g) => g.points !== null);
-	const withForecasts = courseGrades
-		.map((g) => ({ ...g, p: g.points ?? g.forecast }))
-		.filter((g) => g.p !== null);
-	const weights = types.map((t) => ({ id: t.id, weight: t.weight }));
-	const fromGrades = halfYearPoints(
-		actual.map((g) => ({ points: g.points!, typeId: g.gradeTypeId, weight: g.weight })),
-		weights
-	);
-	const fromGradesProjected = halfYearPoints(
-		withForecasts.map((g) => ({ points: g.p!, typeId: g.gradeTypeId, weight: g.weight })),
-		weights
-	);
-
-	let source: CourseSource = 'offen';
-	let effective: number | null = null;
-	if (course.points !== null) {
-		source = 'zeugnis';
-		effective = course.points;
-	} else if (course.forecast !== null) {
-		source = 'prognose';
-		effective = course.forecast;
-	} else if (fromGradesProjected) {
-		source = 'noten';
-		effective = fromGradesProjected.points;
-	}
-
-	return {
-		halfYear: course.halfYear as HalfYear,
-		points: course.points,
-		forecast: course.forecast,
-		fromGrades,
-		fromGradesProjected,
-		gradeCount: actual.length,
-		openCount: courseGrades.length - actual.length,
-		source,
-		effective
-	};
 }
 
 export function loadAll(db: Db): AllData {

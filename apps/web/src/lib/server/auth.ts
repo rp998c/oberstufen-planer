@@ -11,11 +11,23 @@ function hashToken(token: string): string {
 	return createHash('sha256').update(token).digest('hex');
 }
 
-export function createSession(db: Db, days: number, now = Date.now()) {
+export function createSession(
+	db: Db,
+	days: number,
+	now = Date.now(),
+	device: { kind?: 'browser' | 'app'; name?: string | null } = {}
+) {
 	const token = randomBytes(32).toString('base64url');
 	const expiresAt = new Date(now + days * DAY_MS);
 	db.insert(sessions)
-		.values({ id: hashToken(token), createdAt: new Date(now), expiresAt })
+		.values({
+			id: hashToken(token),
+			createdAt: new Date(now),
+			expiresAt,
+			kind: device.kind ?? 'browser',
+			name: device.name ?? null,
+			lastSeenAt: new Date(now)
+		})
 		.run();
 	return { token, expiresAt };
 }
@@ -34,8 +46,17 @@ export function validateSession(db: Db, token: string, days: number, now = Date.
 	}
 	if (row.expiresAt.getTime() - now < (days * DAY_MS) / 2) {
 		const expiresAt = new Date(now + days * DAY_MS);
-		db.update(sessions).set({ expiresAt }).where(eq(sessions.id, id)).run();
+		db.update(sessions)
+			.set({ expiresAt, lastSeenAt: new Date(now) })
+			.where(eq(sessions.id, id))
+			.run();
 		return { expiresAt, renewed: true };
+	}
+	if (!row.lastSeenAt || now - row.lastSeenAt.getTime() > 60 * 60 * 1000) {
+		db.update(sessions)
+			.set({ lastSeenAt: new Date(now) })
+			.where(eq(sessions.id, id))
+			.run();
 	}
 	return { expiresAt: row.expiresAt, renewed: false };
 }
@@ -50,6 +71,24 @@ export function deleteExpiredSessions(db: Db, now = Date.now()) {
 	db.delete(sessions)
 		.where(lt(sessions.expiresAt, new Date(now)))
 		.run();
+}
+
+/** App logins (Android) with device name and last use. */
+export function listAppSessions(db: Db) {
+	return db
+		.select({
+			id: sessions.id,
+			name: sessions.name,
+			createdAt: sessions.createdAt,
+			lastSeenAt: sessions.lastSeenAt
+		})
+		.from(sessions)
+		.where(eq(sessions.kind, 'app'))
+		.all();
+}
+
+export function deleteSessionById(db: Db, id: string) {
+	db.delete(sessions).where(eq(sessions.id, id)).run();
 }
 
 /** Simple lockout for the single password: after `maxFailures` within `windowMs`, block for `windowMs`. */
@@ -130,3 +169,6 @@ export async function changePassword(db: Db, password: string) {
 export async function verifyPassword(hashValue: string, password: string): Promise<boolean> {
 	return verify(hashValue, password).catch(() => false);
 }
+
+/** One lockout for all password checks (browser login and app login). */
+export const loginThrottle = new LoginThrottle();

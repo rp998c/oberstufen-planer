@@ -33,6 +33,9 @@ importers:
       '@oberstufen-planer/abi-engine-bw':
         specifier: workspace:*
         version: link:../../packages/abi-engine-bw
+      '@oberstufen-planer/app-core':
+        specifier: workspace:*
+        version: link:../../packages/app-core
       '@sveltejs/adapter-node':
         specifier: ^5.5.7
         version: 5.5.7(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.57.3)(vite@7.3.7(@types/node@22.20.5)(tsx@4.23.15)))(svelte@5.57.3)(typescript@5.9.3)(vite@7.3.7(@types/node@22.20.5)(tsx@4.23.15)))
@@ -71,6 +74,19 @@ importers:
         version: 3.2.7(@types/node@22.20.5)(tsx@4.23.15)
 
   packages/abi-engine-bw:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(@types/node@22.20.5)(tsx@4.23.15)
+
+  packages/app-core:
+    dependencies:
+      '@oberstufen-planer/abi-engine-bw':
+        specifier: workspace:*
+        version: link:../abi-engine-bw
     devDependencies:
       typescript:
         specifier: ^5.9.3
