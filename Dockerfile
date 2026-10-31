@@ -9,8 +9,11 @@ WORKDIR /repo
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/
+COPY apps/mobile/package.json apps/mobile/
 COPY packages/abi-engine-bw/package.json packages/abi-engine-bw/
-RUN pnpm install --frozen-lockfile
+COPY packages/app-core/package.json packages/app-core/
+# only the server and what it needs (not the Android app)
+RUN pnpm install --frozen-lockfile --filter web...
 
 COPY . .
 RUN pnpm --filter web build \

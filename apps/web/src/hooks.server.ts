@@ -1,4 +1,4 @@
-import { redirect, type Handle, type ServerInit } from '@sveltejs/kit';
+import { json, redirect, type Handle, type ServerInit } from '@sveltejs/kit';
 import {
 	SESSION_COOKIE,
 	deleteExpiredSessions,
@@ -22,7 +22,13 @@ export const init: ServerInit = () => {
 	}
 };
 
-const PUBLIC_PATHS = new Set(['/login', '/healthz', '/passwort-festlegen']);
+const PUBLIC_PATHS = new Set([
+	'/login',
+	'/healthz',
+	'/passwort-festlegen',
+	'/api/app/info',
+	'/api/app/login'
+]);
 const SETUP_PATH = '/passwort-festlegen';
 
 export const handle: Handle = async ({ event, resolve }) => {
@@ -33,9 +39,16 @@ export const handle: Handle = async ({ event, resolve }) => {
 	} else if (!getPasswordHash(getDb(), config.passwordHash)) {
 		// first start: nobody can log in yet, everything leads to the set-password page
 		event.locals.authenticated = false;
-		if (event.url.pathname !== SETUP_PATH && event.url.pathname !== '/healthz') {
+		if (!PUBLIC_PATHS.has(event.url.pathname) || event.url.pathname === '/login') {
+			if (event.url.pathname.startsWith('/api/')) {
+				return json({ error: 'Bitte zuerst im Browser ein Passwort festlegen.' }, { status: 409 });
+			}
 			redirect(303, SETUP_PATH);
 		}
+	} else if (event.request.headers.get('authorization')?.startsWith('Bearer ')) {
+		// Android app
+		const token = event.request.headers.get('authorization')!.slice(7).trim();
+		event.locals.authenticated = validateSession(getDb(), token, config.sessionDays) !== null;
 	} else {
 		const token = event.cookies.get(SESSION_COOKIE);
 		const session = token ? validateSession(getDb(), token, config.sessionDays) : null;
@@ -53,6 +66,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const isPublic =
 		PUBLIC_PATHS.has(event.url.pathname) || event.url.pathname.startsWith('/kalender/feed/');
+	if (!event.locals.authenticated && !isPublic && event.url.pathname.startsWith('/api/')) {
+		return json({ error: 'Nicht angemeldet.' }, { status: 401 });
+	}
 	if (!event.locals.authenticated && !isPublic) {
 		const target = event.url.pathname + event.url.search;
 		redirect(303, target === '/' ? '/login' : `/login?redirectTo=${encodeURIComponent(target)}`);

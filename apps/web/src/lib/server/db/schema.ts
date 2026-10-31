@@ -4,7 +4,12 @@ import { integer, primaryKey, real, sqliteTable, text, uniqueIndex } from 'drizz
 export const sessions = sqliteTable('sessions', {
 	id: text('id').primaryKey(),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
-	expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull()
+	expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+	/** 'browser' or 'app' (Android app with a bearer token). */
+	kind: text('kind').notNull().default('browser'),
+	/** Device name chosen in the app. */
+	name: text('name'),
+	lastSeenAt: integer('last_seen_at', { mode: 'timestamp_ms' })
 });
 
 /** Key/value store for app settings (profile, besondere Lernleistung, overrides, …). */
@@ -163,4 +168,19 @@ export const studyGoals = sqliteTable('study_goals', {
 	due: text('due'),
 	achieved: integer('achieved', { mode: 'boolean' }).notNull().default(false),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull()
+});
+
+/**
+ * Single row with a counter that SQLite triggers increase on every change of user data
+ * (see migration 0005). The app only downloads data when the revision changed.
+ */
+export const syncMeta = sqliteTable('sync_meta', {
+	id: integer('id').primaryKey(),
+	revision: integer('revision').notNull().default(0)
+});
+
+/** Operations from the app that were already applied (each one only once). */
+export const appliedOps = sqliteTable('applied_ops', {
+	opId: text('op_id').primaryKey(),
+	appliedAt: integer('applied_at', { mode: 'timestamp_ms' }).notNull()
 });

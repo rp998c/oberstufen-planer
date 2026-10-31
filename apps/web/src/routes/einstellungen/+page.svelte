@@ -252,6 +252,36 @@
 {/if}
 
 <section class="card">
+	<h2>Android-App</h2>
+	<p class="muted">
+		In der App die Adresse dieses Servers eingeben und mit deinem Passwort anmelden. Die App
+		speichert die Daten auf dem Handy, funktioniert offline und gleicht sich automatisch ab.
+	</p>
+	{#if data.appDevices.length}
+		<ul class="devices">
+			{#each data.appDevices as d (d.id)}
+				<li>
+					<span>
+						<strong>{d.name}</strong>
+						<small class="muted">
+							angemeldet {new Date(d.createdAt).toLocaleDateString('de-DE')}{d.lastSeenAt
+								? ` · zuletzt aktiv ${new Date(d.lastSeenAt).toLocaleDateString('de-DE')}`
+								: ''}
+						</small>
+					</span>
+					<form method="POST" action="?/revokeDevice" use:enhance>
+						<input type="hidden" name="id" value={d.id} />
+						<button type="submit" class="link">Abmelden</button>
+					</form>
+				</li>
+			{/each}
+		</ul>
+	{:else}
+		<p class="muted small">Noch kein Gerät angemeldet.</p>
+	{/if}
+</section>
+
+<section class="card">
 	<h2>Daten</h2>
 	<p class="muted">
 		Sichere alle Fächer, Noten, Termine und Einstellungen als Datei – z. B. bevor du den Server
@@ -288,6 +318,28 @@
 	}
 	.restore {
 		margin-top: 1rem;
+	}
+	.devices {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+	.devices li {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.4rem 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.devices li:last-child {
+		border-bottom: 0;
+	}
+	.devices small {
+		display: block;
+	}
+	.devices form {
+		margin: 0;
 	}
 	.restore input {
 		flex: 1 1 12rem;

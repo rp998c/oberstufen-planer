@@ -1,0 +1,22 @@
+{
+	"name": "@oberstufen-planer/app-core",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Shared between server and Android app: sync snapshot, change operations, calculation input, reminders",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./calendar": "./src/calendar.ts"
+	},
+	"scripts": {
+		"check": "tsc --noEmit",
+		"test": "vitest run"
+	},
+	"dependencies": {
+		"@oberstufen-planer/abi-engine-bw": "workspace:*"
+	},
+	"devDependencies": {
+		"typescript": "^5.9.3",
+		"vitest": "^3.2.7"
+	}
+}

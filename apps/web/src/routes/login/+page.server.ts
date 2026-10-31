@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
-	LoginThrottle,
+	loginThrottle as throttle,
 	SESSION_COOKIE,
 	createSession,
 	getPasswordHash,
@@ -10,8 +10,6 @@ import {
 import { getConfig } from '$lib/server/config.ts';
 import { getDb } from '$lib/server/instance.ts';
 import type { Actions, PageServerLoad } from './$types';
-
-const throttle = new LoginThrottle();
 
 export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.authenticated) redirect(303, safeRedirectTarget(url.searchParams.get('redirectTo')));
