@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { formatGrade } from '@oberstufen-planer/abi-engine-bw';
 	import Trend from '$lib/components/Trend.svelte';
+	import { EVENT_KINDS, daysUntil, formatEventDate } from '$lib/calendar.ts';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -53,6 +54,34 @@
 		<div class="muted small">Szenarien durchspielen</div>
 	</a>
 </div>
+
+<section class="card next">
+	<div class="next-head">
+		<h2>Nächste Termine</h2>
+		<a href="/kalender">Kalender →</a>
+	</div>
+	{#if data.nextEvents.length === 0}
+		<p class="muted small">Keine anstehenden Termine. <a href="/kalender">Klausur eintragen</a></p>
+	{:else}
+		<ul>
+			{#each data.nextEvents as e (e.id)}
+				{@const d = daysUntil(e.start)}
+				<li>
+					<span class="bar" style:background={e.color ?? 'var(--border)'}></span>
+					<span class="when">{d <= 0 ? 'heute' : d === 1 ? 'morgen' : `in ${d} T.`}</span>
+					<span class="what">
+						<strong>{e.title}</strong>
+						<small class="muted"
+							>{EVENT_KINDS[e.kind as keyof typeof EVENT_KINDS] ?? 'Termin'}{e.subject
+								? ` · ${e.subject}`
+								: ''} · {formatEventDate(e.start, e.allDay)}</small
+						>
+					</span>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+</section>
 
 <section>
 	<h2>Fächer</h2>
@@ -219,6 +248,37 @@
 	.avg {
 		font-weight: 700;
 		font-variant-numeric: tabular-nums;
+	}
+	.next-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+	}
+	.next ul {
+		list-style: none;
+		padding: 0;
+		margin: 0.5rem 0 0;
+		display: grid;
+		gap: 0.5rem;
+	}
+	.next li {
+		display: flex;
+		gap: 0.6rem;
+		align-items: stretch;
+	}
+	.next .bar {
+		width: 4px;
+		border-radius: 2px;
+		flex: none;
+	}
+	.when {
+		min-width: 4.2rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.what {
+		display: grid;
+		min-width: 0;
 	}
 	.tag.good {
 		color: var(--accent);

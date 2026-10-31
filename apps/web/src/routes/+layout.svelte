@@ -10,6 +10,7 @@
 		{ href: '/', label: 'Übersicht' },
 		{ href: '/noten', label: 'Noten' },
 		{ href: '/abitur', label: 'Abitur' },
+		{ href: '/kalender', label: 'Kalender' },
 		{ href: '/prognose', label: 'Was wäre wenn' },
 		{ href: '/faecher', label: 'Fächer' },
 		{ href: '/einstellungen', label: 'Einstellungen' }
@@ -21,7 +22,11 @@
 <header>
 	<a class="brand" href="/">Oberstufen-Planer</a>
 	{#if data.authenticated && data.canLogout}
-		<form method="POST" action="/logout">
+		<form
+			method="POST"
+			action="/logout"
+			onsubmit={() => navigator.serviceWorker?.controller?.postMessage('clear-pages')}
+		>
 			<button class="link" type="submit">Abmelden</button>
 		</form>
 	{/if}

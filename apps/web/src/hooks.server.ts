@@ -3,12 +3,14 @@ import { SESSION_COOKIE, deleteExpiredSessions, validateSession } from '$lib/ser
 import { getConfig } from '$lib/server/config.ts';
 import { ensureDefaults } from '$lib/server/data.ts';
 import { getDb } from '$lib/server/instance.ts';
+import { startReminderLoop } from '$lib/server/reminders.ts';
 
 /** Runs once at server start: fail fast on bad configuration and apply DB migrations. */
 export const init: ServerInit = () => {
 	const config = getConfig();
 	deleteExpiredSessions(getDb());
 	ensureDefaults(getDb());
+	startReminderLoop(getDb());
 	console.log(`Oberstufen-Planer started (AUTH=${config.auth}, DATA_DIR=${config.dataDir})`);
 };
 
@@ -34,7 +36,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.authenticated = session !== null;
 	}
 
-	if (!event.locals.authenticated && !PUBLIC_PATHS.has(event.url.pathname)) {
+	const isPublic =
+		PUBLIC_PATHS.has(event.url.pathname) || event.url.pathname.startsWith('/kalender/feed/');
+	if (!event.locals.authenticated && !isPublic) {
 		const target = event.url.pathname + event.url.search;
 		redirect(303, target === '/' ? '/login' : `/login?redirectTo=${encodeURIComponent(target)}`);
 	}

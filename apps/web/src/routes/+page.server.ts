@@ -1,11 +1,14 @@
 import { redirect } from '@sveltejs/kit';
 import { HALF_YEARS, isValidPoints } from '@oberstufen-planer/abi-engine-bw';
+import { toLocalDate } from '$lib/calendar.ts';
+import { listEvents } from '$lib/server/events.ts';
 import { getDb } from '$lib/server/instance.ts';
 import { getPlan } from '$lib/server/plan.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	const { all, result } = getPlan(getDb());
+	const db = getDb();
+	const { all, result } = getPlan(db);
 	if (!all.subjects.length) redirect(303, '/einrichtung');
 
 	const byKey = new Map(
@@ -39,6 +42,14 @@ export const load: PageServerLoad = () => {
 	const ranked = subjects.filter((s) => s.avg !== null).sort((a, b) => b.avg! - a.avg!);
 	return {
 		profile: all.profile,
+		nextEvents: listEvents(db)
+			.filter((e) => (e.end ?? e.start).slice(0, 10) >= toLocalDate(new Date()))
+			.slice(0, 4)
+			.map((e) => ({
+				...e,
+				subject: all.subjects.find((s) => s.id === e.subjectId)?.name ?? null,
+				color: all.subjects.find((s) => s.id === e.subjectId)?.color ?? null
+			})),
 		result: {
 			total: result.total,
 			blockI: result.blockI.points,

@@ -15,6 +15,13 @@
       "when": 1793455126265,
       "tag": "0001_grades",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793456379617,
+      "tag": "0002_calendar",
+      "breakpoints": true
     }
   ]
 }
