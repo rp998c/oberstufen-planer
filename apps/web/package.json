@@ -1,0 +1,40 @@
+{
+	"name": "web",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"files": [
+		"build",
+		"drizzle",
+		"scripts"
+	],
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"start": "node build",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"test": "vitest run",
+		"db:generate": "drizzle-kit generate",
+		"hash-password": "node scripts/hash-password.js"
+	},
+	"dependencies": {
+		"@node-rs/argon2": "^2.0.2",
+		"better-sqlite3": "^12.11.1",
+		"drizzle-orm": "^0.44.7"
+	},
+	"devDependencies": {
+		"@oberstufen-planer/abi-engine-bw": "workspace:*",
+		"@sveltejs/adapter-node": "^5.5.7",
+		"@sveltejs/kit": "^2.70.3",
+		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"@types/better-sqlite3": "^7.6.13",
+		"@types/node": "^22.18.0",
+		"drizzle-kit": "^0.31.11",
+		"svelte": "^5.57.3",
+		"svelte-check": "^4.7.7",
+		"typescript": "^5.9.3",
+		"vite": "^7.3.7",
+		"vitest": "^3.2.7"
+	}
+}

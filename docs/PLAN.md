@@ -172,7 +172,7 @@ services:
       TZ: Europe/Berlin
     restart: unless-stopped
 ```
-- Image target is under 150 MB, built for amd64 and arm64 (Raspberry Pi / Synology).
+- Image is about 200–280 MB (mostly the Node base image; the app itself is under 40 MB), built for amd64 and arm64 (Raspberry Pi / Synology).
 - Backups are a copy of `./data/app.db` or the JSON export.
 - HTTPS through a reverse proxy (Caddy example in the docs), which a PWA and Web Push need.
 
@@ -180,7 +180,7 @@ services:
 
 | # | Content | Estimate |
 |---|---|---|
-| M0 | Repo, CI (lint, test, image build to GHCR), Docker skeleton, password login, healthcheck | 1–2 days |
+| M0 ✅ | Repo, CI (lint, test, image build to GHCR), Docker skeleton, password login, healthcheck | 1–2 days |
 | M1 | `abi-engine-bw`: Block I/II, rule checks, grade table, optimiser + tests | 4–5 days |
 | M2 | UI: setup, subjects, grade types, grade entry, half-year grades | 1 week |
 | M3 | Dashboard, what-if/forecast, target calculator, course-selection view | 1 week |

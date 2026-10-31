@@ -1,0 +1,14 @@
+services:
+  oberstufen-planer:
+    image: ghcr.io/rp998c/oberstufen-planer:latest
+    # To build locally instead of pulling: docker compose up --build
+    build: .
+    ports:
+      - '3000:3000'
+    volumes:
+      - data:/data
+    env_file: .env
+    restart: unless-stopped
+
+volumes:
+  data:
