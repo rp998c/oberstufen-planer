@@ -9,6 +9,8 @@
 	const links = [
 		{ href: '/', label: 'Übersicht' },
 		{ href: '/noten', label: 'Noten' },
+		{ href: '/abitur', label: 'Abitur' },
+		{ href: '/prognose', label: 'Was wäre wenn' },
 		{ href: '/faecher', label: 'Fächer' },
 		{ href: '/einstellungen', label: 'Einstellungen' }
 	];
