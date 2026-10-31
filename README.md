@@ -16,38 +16,46 @@ Der ursprüngliche Plan steht in [docs/PLAN.md](docs/PLAN.md).
 
 > Planungshilfe – verbindlich ist die Berechnung der Schule.
 
-## Starten mit Docker
+## Installation
 
-1. Passwort-Hash erzeugen (das Passwort wird verdeckt abgefragt):
+Es muss nichts konfiguriert werden – das Passwort legst du beim ersten Aufruf im Browser fest.
 
-   ```bash
-   docker run --rm -it ghcr.io/rp998c/oberstufen-planer:latest hash-password
-   ```
+**TrueNAS SCALE:** siehe [docs/TRUENAS.md](docs/TRUENAS.md) (YAML einfügen, fertig).
 
-2. `.env.example` nach `.env` kopieren und den Hash eintragen – **in einfachen Anführungszeichen**, weil er `$` enthält:
+**Docker:**
 
-   ```bash
-   APP_PASSWORD_HASH='$argon2id$v=19$m=19456,t=2,p=1$…'
-   ```
+```bash
+docker run -d --name oberstufen-planer -p 3000:3000 -v oberstufen-planer:/data --restart unless-stopped ghcr.io/rp998c/oberstufen-planer:latest
+```
 
-3. Starten:
+oder mit Docker Compose (die [compose.yaml](compose.yaml) aus diesem Repo):
 
-   ```bash
-   docker compose up -d
-   ```
+```bash
+docker compose up -d
+```
 
-Die App läuft dann auf <http://localhost:3000>. Die Daten liegen im Docker-Volume `data` (eine SQLite-Datei, `/data/app.db`).
+Dann `http://<server>:3000` öffnen und ein Passwort festlegen. Die Daten liegen im Volume unter `/data`
+(eine SQLite-Datei).
 
-### Konfiguration
+**Passwort vergessen?**
 
-| Variable            | Standard        | Bedeutung                                                                                                 |
-| ------------------- | --------------- | --------------------------------------------------------------------------------------------------------- |
-| `AUTH`              | `password`      | `password`: Anmeldung mit einem Passwort. `none`: keine Anmeldung, z. B. hinter einem eigenen Auth-Proxy. |
-| `APP_PASSWORD_HASH` | –               | Argon2-Hash des Passworts (Pflicht bei `AUTH=password`)                                                   |
-| `ORIGIN`            | –               | Öffentliche Adresse, z. B. `https://abi.example.org`. Nötig, damit Formulare funktionieren.               |
-| `SESSION_DAYS`      | `90`            | Wie lange eine Anmeldung gültig bleibt (verlängert sich bei Nutzung)                                      |
-| `PORT`              | `3000`          | Port im Container                                                                                         |
-| `TZ`                | `Europe/Berlin` | Zeitzone für Termine und Erinnerungen                                                                     |
+```bash
+docker exec -it oberstufen-planer reset-password
+```
+
+### Optionale Einstellungen
+
+Alles funktioniert ohne diese Variablen.
+
+| Variable            | Standard        | Bedeutung                                                                                          |
+| ------------------- | --------------- | -------------------------------------------------------------------------------------------------- |
+| `PUID` / `PGID`     | `1000`          | Besitzer des Datenordners, z. B. `568` für TrueNAS-Datasets. Die Rechte setzt die App selbst.      |
+| `AUTH`              | `password`      | `none` schaltet die Anmeldung ab, z. B. hinter einem eigenen Auth-Proxy.                           |
+| `APP_PASSWORD_HASH` | –               | Festes Passwort (Argon2-Hash, erzeugen mit `hash-password` im Container) statt Passwort in der App |
+| `ORIGIN`            | automatisch     | Öffentliche Adresse; nur nötig, wenn ein Reverse-Proxy keine `X-Forwarded-*`-Header setzt.         |
+| `SESSION_DAYS`      | `90`            | Wie lange eine Anmeldung gültig bleibt (verlängert sich bei Nutzung)                               |
+| `PORT`              | `3000`          | Port im Container                                                                                  |
+| `TZ`                | `Europe/Berlin` | Zeitzone für Termine und Erinnerungen                                                              |
 
 Für den Zugriff von außen gehört ein Reverse-Proxy mit HTTPS davor (z. B. Caddy). Ohne HTTPS funktionieren die Installation als App und Push-Erinnerungen nicht (Ausnahme: `localhost`).
 
@@ -61,7 +69,7 @@ abi.example.org {
 
 ### Erste Schritte
 
-1. Anmelden und unter **Einrichtung** Fächer, Leistungsfächer und mündliche Prüfungsfächer wählen.
+1. Passwort festlegen und unter **Einrichtung** Fächer, Leistungsfächer und mündliche Prüfungsfächer wählen.
 2. Unter **Mehr → Einstellungen** die Notenarten und ihre Gewichtung anpassen (Standard: Klausur 2, Mündlich 1, GFS 1).
 3. Unter **Noten** Einzelnoten oder direkt die Zeugnisnoten eintragen.
 4. Optional: **Kalender** befüllen, Erinnerungen einrichten, App zum Home-Bildschirm hinzufügen.
@@ -94,12 +102,13 @@ Voraussetzungen: Node.js 22 und pnpm (`corepack enable`).
 
 ```bash
 pnpm install
-echo -n 'mein-passwort' | pnpm --silent --filter web hash-password
 ```
 
 ```bash
-APP_PASSWORD_HASH='…' pnpm dev
+pnpm dev
 ```
+
+Beim ersten Aufruf fragt die App nach einem Passwort (gespeichert in `apps/web/data/app.db`).
 
 | Befehl                          | Zweck                                   |
 | ------------------------------- | --------------------------------------- |

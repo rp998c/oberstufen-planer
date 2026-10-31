@@ -1,13 +1,13 @@
+# Minimal setup – nothing to configure. Start with: docker compose up -d
+# Then open http://<server>:3000 and choose a password.
 services:
   oberstufen-planer:
     image: ghcr.io/rp998c/oberstufen-planer:latest
-    # To build locally instead of pulling: docker compose up --build
-    build: .
+    container_name: oberstufen-planer
     ports:
       - '3000:3000'
     volumes:
       - data:/data
-    env_file: .env
     restart: unless-stopped
 
 volumes:

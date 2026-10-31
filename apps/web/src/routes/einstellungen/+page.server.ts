@@ -3,6 +3,15 @@ import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { REMINDER_PRESETS } from '$lib/calendar.ts';
 import { BackupError, importData } from '$lib/server/backup.ts';
+import {
+	MIN_PASSWORD_LENGTH,
+	SESSION_COOKIE,
+	changePassword,
+	deleteOtherSessions,
+	getPasswordHash,
+	verifyPassword
+} from '$lib/server/auth.ts';
+import { getConfig } from '$lib/server/config.ts';
 import { getProfile, listGradeTypes, setSetting } from '$lib/server/data.ts';
 import { gradeTypes, grades, pushSubscriptions } from '$lib/server/db/schema.ts';
 import { getDefaultReminders, getFeedToken } from '$lib/server/events.ts';
@@ -26,7 +35,8 @@ export const load: PageServerLoad = ({ url }) => {
 		feedUrl: `${url.origin}/kalender/feed/${getFeedToken(db)}.ics`,
 		ntfy: getNtfy(db),
 		reminderDefaults: getDefaultReminders(db),
-		pushDevices: db.select().from(pushSubscriptions).all().length
+		pushDevices: db.select().from(pushSubscriptions).all().length,
+		password: getConfig().auth === 'none' ? 'none' : getConfig().passwordHash ? 'env' : 'app'
 	};
 };
 
@@ -135,5 +145,32 @@ export const actions: Actions = {
 			throw e;
 		}
 		return { saved: 'restore' };
+	},
+	password: async ({ request, cookies }) => {
+		const config = getConfig();
+		if (config.auth === 'none' || config.passwordHash) {
+			return fail(400, {
+				error: 'Das Passwort wird über die Umgebungsvariable APP_PASSWORD_HASH verwaltet.'
+			});
+		}
+		const db = getDb();
+		const fd = await request.formData();
+		const current = String(fd.get('current') ?? '');
+		const next = String(fd.get('next') ?? '');
+		const hashValue = getPasswordHash(db, '');
+		if (!hashValue || !(await verifyPassword(hashValue, current))) {
+			return fail(400, { error: 'Das aktuelle Passwort ist falsch.' });
+		}
+		if (next.length < MIN_PASSWORD_LENGTH) {
+			return fail(400, {
+				error: `Das neue Passwort muss mindestens ${MIN_PASSWORD_LENGTH} Zeichen lang sein.`
+			});
+		}
+		if (next !== String(fd.get('repeat') ?? ''))
+			return fail(400, { error: 'Die neuen Passwörter stimmen nicht überein.' });
+		await changePassword(db, next);
+		const token = cookies.get(SESSION_COOKIE);
+		if (token) deleteOtherSessions(db, token);
+		return { saved: 'password' };
 	}
 };

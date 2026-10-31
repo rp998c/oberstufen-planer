@@ -1,10 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { verify } from '@node-rs/argon2';
 import {
 	LoginThrottle,
 	SESSION_COOKIE,
 	createSession,
-	safeRedirectTarget
+	getPasswordHash,
+	safeRedirectTarget,
+	verifyPassword
 } from '$lib/server/auth.ts';
 import { getConfig } from '$lib/server/config.ts';
 import { getDb } from '$lib/server/instance.ts';
@@ -32,7 +33,9 @@ export const actions: Actions = {
 			return fail(400, { error: 'Bitte das Passwort eingeben.' });
 		}
 
-		const ok = await verify(config.passwordHash, password).catch(() => false);
+		const hashValue = getPasswordHash(getDb(), config.passwordHash);
+		if (!hashValue) redirect(303, '/passwort-festlegen');
+		const ok = await verifyPassword(hashValue, password);
 		if (!ok) {
 			throttle.registerFailure();
 			return fail(401, { error: 'Falsches Passwort.' });

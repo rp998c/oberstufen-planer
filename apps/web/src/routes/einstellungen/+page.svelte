@@ -197,6 +197,60 @@
 	</form>
 </section>
 
+{#if data.password === 'app'}
+	<section class="card">
+		<h2>Passwort ändern</h2>
+		<form
+			method="POST"
+			action="?/password"
+			use:enhance={() =>
+				async ({ update }) =>
+					update({ reset: true })}
+			class="stack"
+		>
+			<div class="grid2">
+				<div class="field">
+					<label for="pw-current">Aktuelles Passwort</label>
+					<input
+						id="pw-current"
+						name="current"
+						type="password"
+						autocomplete="current-password"
+						required
+					/>
+				</div>
+				<div class="field">
+					<label for="pw-next">Neues Passwort</label>
+					<input
+						id="pw-next"
+						name="next"
+						type="password"
+						autocomplete="new-password"
+						minlength="8"
+						required
+					/>
+				</div>
+				<div class="field">
+					<label for="pw-repeat">Neues Passwort wiederholen</label>
+					<input
+						id="pw-repeat"
+						name="repeat"
+						type="password"
+						autocomplete="new-password"
+						minlength="8"
+						required
+					/>
+				</div>
+			</div>
+			<p class="muted small">Andere angemeldete Geräte werden dabei abgemeldet.</p>
+			<div class="actions">
+				<button type="submit" class="secondary">Passwort ändern</button>
+				{#if form?.saved === 'password'}<span class="ok">Passwort geändert.</span>{/if}
+			</div>
+		</form>
+	</section>
+{/if}
+
 <section class="card">
 	<h2>Daten</h2>
 	<p class="muted">
