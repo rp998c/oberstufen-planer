@@ -28,7 +28,9 @@ Es muss nichts konfiguriert werden – das Passwort legst du beim ersten Aufruf 
 docker run -d --name oberstufen-planer -p 3000:3000 -v oberstufen-planer:/data --restart unless-stopped ghcr.io/rp998c/oberstufen-planer:latest
 ```
 
-oder mit Docker Compose (die [compose.yaml](compose.yaml) aus diesem Repo):
+Die erste Zahl bei `-p 3000:3000` ist der Port auf deinem Server – für Port 8080 also `-p 8080:3000`.
+
+Oder mit Docker Compose (die [compose.yaml](compose.yaml) aus diesem Repo, Port unter `published:` wählbar):
 
 ```bash
 docker compose up -d
