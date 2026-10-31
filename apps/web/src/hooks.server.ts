@@ -1,12 +1,14 @@
 import { redirect, type Handle, type ServerInit } from '@sveltejs/kit';
 import { SESSION_COOKIE, deleteExpiredSessions, validateSession } from '$lib/server/auth.ts';
 import { getConfig } from '$lib/server/config.ts';
+import { ensureDefaults } from '$lib/server/data.ts';
 import { getDb } from '$lib/server/instance.ts';
 
 /** Runs once at server start: fail fast on bad configuration and apply DB migrations. */
 export const init: ServerInit = () => {
 	const config = getConfig();
 	deleteExpiredSessions(getDb());
+	ensureDefaults(getDb());
 	console.log(`Oberstufen-Planer started (AUTH=${config.auth}, DATA_DIR=${config.dataDir})`);
 };
 

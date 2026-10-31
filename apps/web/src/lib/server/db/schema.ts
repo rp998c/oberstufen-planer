@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { integer, primaryKey, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 /** Login sessions. `id` is the SHA-256 of the cookie token, so a leaked DB can't be used to log in. */
 export const sessions = sqliteTable('sessions', {
@@ -7,8 +7,80 @@ export const sessions = sqliteTable('sessions', {
 	expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull()
 });
 
-/** Key/value store for app settings (Abitur year, reminder defaults, …). */
+/** Key/value store for app settings (profile, besondere Lernleistung, overrides, …). */
 export const settings = sqliteTable('settings', {
 	key: text('key').primaryKey(),
 	value: text('value', { mode: 'json' }).notNull()
+});
+
+/** A school subject in the Kursstufe. */
+export const subjects = sqliteTable('subjects', {
+	id: text('id').primaryKey(),
+	name: text('name').notNull(),
+	/** Engine category, see abi-engine-bw `Category`. */
+	category: text('category').notNull(),
+	/** 'LF' or 'BF'. */
+	level: text('level').notNull(),
+	/** 'written', 'oral' or null. */
+	exam: text('exam'),
+	fromClass8: integer('from_class8', { mode: 'boolean' }).notNull().default(true),
+	color: text('color').notNull(),
+	sortOrder: integer('sort_order').notNull().default(0)
+});
+
+/**
+ * A half-year course. The row exists if the subject is taken in that half-year.
+ * `points` = grade on the report card, `forecast` = own estimate (what-if).
+ */
+export const courses = sqliteTable(
+	'courses',
+	{
+		subjectId: text('subject_id')
+			.notNull()
+			.references(() => subjects.id, { onDelete: 'cascade' }),
+		halfYear: integer('half_year').notNull(),
+		points: integer('points'),
+		forecast: integer('forecast')
+	},
+	(t) => [primaryKey({ columns: [t.subjectId, t.halfYear] })]
+);
+
+/** Kinds of grades with their weight for the half-year grade (Klausur, mündlich, GFS …). */
+export const gradeTypes = sqliteTable('grade_types', {
+	id: text('id').primaryKey(),
+	name: text('name').notNull(),
+	weight: real('weight').notNull().default(1),
+	sortOrder: integer('sort_order').notNull().default(0)
+});
+
+/**
+ * A single grade. `points` null = "offene Note": an announced grade that is still to come,
+ * optionally with `forecast` points for the projection.
+ */
+export const grades = sqliteTable('grades', {
+	id: text('id').primaryKey(),
+	subjectId: text('subject_id')
+		.notNull()
+		.references(() => subjects.id, { onDelete: 'cascade' }),
+	halfYear: integer('half_year').notNull(),
+	gradeTypeId: text('grade_type_id')
+		.notNull()
+		.references(() => gradeTypes.id, { onDelete: 'restrict' }),
+	points: integer('points'),
+	forecast: integer('forecast'),
+	weight: real('weight').notNull().default(1),
+	/** ISO date (YYYY-MM-DD). */
+	date: text('date'),
+	note: text('note').notNull().default('')
+});
+
+/** Abitur exam results and forecasts per subject. */
+export const exams = sqliteTable('exams', {
+	subjectId: text('subject_id')
+		.primaryKey()
+		.references(() => subjects.id, { onDelete: 'cascade' }),
+	written: integer('written'),
+	oral: integer('oral'),
+	writtenForecast: integer('written_forecast'),
+	oralForecast: integer('oral_forecast')
 });
