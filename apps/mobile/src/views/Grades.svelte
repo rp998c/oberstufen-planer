@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { HALF_YEARS, type HalfYear } from '@oberstufen-planer/abi-engine-bw';
+	import {
+		AREA_LABELS,
+		HALF_YEARS,
+		formatAreaWeights,
+		type HalfYear
+	} from '@oberstufen-planer/abi-engine-bw';
 	import { OpError, type GradeRow } from '@oberstufen-planer/app-core';
 	import { app } from '../lib/app.svelte.ts';
 	import { nav } from '../lib/nav.svelte.ts';
@@ -35,6 +40,7 @@
 	);
 	const typeName = (id: string) => types.find((t) => t.id === id)?.name ?? '?';
 	const fmt = (x: number) => x.toFixed(2).replace('.', ',');
+	const breakdown = $derived(course ? (course.fromGradesProjected ?? course.fromGrades) : null);
 
 	function openCourse(subjectId: string, halfYear: HalfYear) {
 		selected = { subjectId, halfYear };
@@ -129,6 +135,22 @@
 			</div>{/if}
 	</section>
 
+	{#if breakdown}
+		<section class="card breakdown small">
+			{#each breakdown.areas as a (a.area)}
+				<div class:ignored={a.ignored}>
+					<span>{AREA_LABELS[a.area]} ({a.count})</span>
+					<span>Ø {fmt(a.average)} · {a.ignored ? '0' : Math.round(a.share * 100)} %</span>
+				</div>
+			{/each}
+			<div class="muted">
+				Gewichtung: {formatAreaWeights(entry.weights)}{entry.subject.areaWeights
+					? ''
+					: ' (Standard)'}
+			</div>
+		</section>
+	{/if}
+
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 
 	<section class="card list-card">
@@ -164,7 +186,8 @@
 			<div class="field">
 				<label for="g-type">Art</label>
 				<select id="g-type" bind:value={typeId}>
-					{#each types as t (t.id)}<option value={t.id}>{t.name}</option>{/each}
+					{#each types as t (t.id)}<option value={t.id}>{t.name} · {AREA_LABELS[t.area]}</option
+						>{/each}
 				</select>
 			</div>
 			<div class="field">
@@ -308,6 +331,19 @@
 		color: var(--text);
 		border: 1px dashed var(--muted);
 		font-style: italic;
+	}
+	.breakdown {
+		display: grid;
+		gap: 0.25rem;
+	}
+	.breakdown div {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+	.breakdown .ignored {
+		color: var(--muted);
+		text-decoration: line-through;
 	}
 	.summary {
 		display: flex;

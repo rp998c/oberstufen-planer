@@ -18,7 +18,15 @@ export const BACKUP_FORMAT = 'oberstufen-planer-backup';
 export const BACKUP_VERSION = 1;
 
 /** Settings that belong to the user's data. Secrets (VAPID keys, feed token) stay on the server. */
-const EXPORTED_SETTINGS = ['profile', 'bll', 'overrides', 'reminderDefaults', 'timetable', 'ntfy'];
+const EXPORTED_SETTINGS = [
+	'profile',
+	'bll',
+	'overrides',
+	'reminderDefaults',
+	'timetable',
+	'ntfy',
+	'areaWeights'
+];
 
 /** Tables in insert order (parents before children). */
 const TABLES = {

@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { and, asc, eq } from 'drizzle-orm';
 import {
+	DEFAULT_AREA_WEIGHTS,
 	HALF_YEARS,
+	type Area,
+	type AreaWeights,
 	type BllInput,
 	type Category,
 	type ExamKind,
@@ -11,7 +14,7 @@ import {
 	type PlanInput,
 	type SubjectInput
 } from '@oberstufen-planer/abi-engine-bw';
-import { courseView, type CourseView } from '@oberstufen-planer/app-core';
+import { courseView, subjectWeights, type CourseView } from '@oberstufen-planer/app-core';
 import type { Db } from './db/index.ts';
 import { courses, exams, gradeTypes, grades, settings, subjects } from './db/schema.ts';
 
@@ -25,10 +28,12 @@ export interface Profile {
 	abiYear: number | null;
 }
 
-export const DEFAULT_GRADE_TYPES = [
-	{ name: 'Klausur', weight: 2 },
-	{ name: 'Mündlich / Mitarbeit', weight: 1 },
-	{ name: 'GFS', weight: 1 }
+export const DEFAULT_GRADE_TYPES: { name: string; area: Area; groupAs: number | null }[] = [
+	{ name: 'Klausur', area: 'schriftlich', groupAs: null },
+	{ name: 'Test', area: 'schriftlich', groupAs: 1 },
+	{ name: 'Mündlich / Mitarbeit', area: 'muendlich', groupAs: null },
+	{ name: 'GFS', area: 'schriftlich', groupAs: null },
+	{ name: 'Praktisch', area: 'praktisch', groupAs: null }
 ];
 
 // ---- settings ---------------------------------------------------------------------------
@@ -48,6 +53,9 @@ export function setSetting(db: Db, key: string, value: unknown) {
 export const getProfile = (db: Db) => getSetting<Profile>(db, 'profile', { abiYear: null });
 export const getBll = (db: Db) => getSetting<BllInput>(db, 'bll', { mode: 'none' });
 export const getOverrides = (db: Db) => getSetting<Overrides>(db, 'overrides', {});
+/** Default weighting of the areas for subjects without their own. */
+export const getAreaWeights = (db: Db) =>
+	getSetting<AreaWeights>(db, 'areaWeights', DEFAULT_AREA_WEIGHTS);
 
 /** Creates the default grade types on first start. */
 export function ensureDefaults(db: Db) {
@@ -55,7 +63,7 @@ export function ensureDefaults(db: Db) {
 		DEFAULT_GRADE_TYPES.forEach((t, i) =>
 			db
 				.insert(gradeTypes)
-				.values({ id: randomUUID(), name: t.name, weight: t.weight, sortOrder: i })
+				.values({ id: randomUUID(), name: t.name, area: t.area, groupAs: t.groupAs, sortOrder: i })
 				.run()
 		);
 	}
@@ -71,6 +79,8 @@ export interface SubjectData {
 	fromClass8: boolean;
 	color: string;
 	halfYears: HalfYear[];
+	/** Own weighting; null = default; undefined = leave unchanged. */
+	areaWeights?: AreaWeights | null;
 }
 
 export function listSubjects(db: Db): SubjectRow[] {
@@ -182,6 +192,8 @@ export interface SubjectView extends SubjectRow {
 	category: Category;
 	level: Level;
 	exam: ExamKind;
+	/** Weighting used for this subject (own or default). */
+	weights: AreaWeights;
 	courses: Partial<Record<HalfYear, CourseView>>;
 	examResult: ExamRow | null;
 }
@@ -193,22 +205,28 @@ export interface AllData {
 	grades: GradeRow[];
 	bll: BllInput;
 	overrides: Overrides;
+	/** Default weighting of the areas. */
+	areaWeights: AreaWeights;
 }
 
 export function loadAll(db: Db): AllData {
 	const types = listGradeTypes(db);
+	const typeRows = types as unknown as import('@oberstufen-planer/app-core').GradeTypeRow[];
+	const defaults = getAreaWeights(db);
 	const allGrades = db.select().from(grades).orderBy(asc(grades.date)).all();
 	const allCourses = db.select().from(courses).all();
 	const allExams = db.select().from(exams).all();
 
 	const subjectViews: SubjectView[] = listSubjects(db).map((s) => {
+		const weights = subjectWeights(s, defaults);
 		const cs: SubjectView['courses'] = {};
 		for (const c of allCourses.filter((c) => c.subjectId === s.id)) {
 			const g = allGrades.filter((g) => g.subjectId === s.id && g.halfYear === c.halfYear);
-			cs[c.halfYear as HalfYear] = courseView(c, g, types);
+			cs[c.halfYear as HalfYear] = courseView(c, g, typeRows, weights);
 		}
 		return {
 			...s,
+			weights,
 			category: s.category as Category,
 			level: s.level as Level,
 			exam: (s.exam as ExamKind) ?? null,
@@ -223,7 +241,8 @@ export function loadAll(db: Db): AllData {
 		gradeTypes: types,
 		grades: allGrades,
 		bll: getBll(db),
-		overrides: getOverrides(db)
+		overrides: getOverrides(db),
+		areaWeights: defaults
 	};
 }
 

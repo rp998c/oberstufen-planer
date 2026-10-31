@@ -1,5 +1,7 @@
 import {
+	DEFAULT_AREA_WEIGHTS,
 	HALF_YEARS,
+	type AreaWeights,
 	type HalfYear,
 	type PlanInput,
 	type SubjectInput
@@ -9,19 +11,30 @@ import { sortedSubjects, type Snapshot, type SubjectRow } from './snapshot.ts';
 
 export interface SubjectCourses {
 	subject: SubjectRow;
+	/** Weighting used for this subject (own or default). */
+	weights: AreaWeights;
 	courses: Partial<Record<HalfYear, CourseView>>;
+}
+
+/** The subject's own weighting, else the default from the settings. */
+export function subjectWeights(
+	subject: Pick<SubjectRow, 'areaWeights'>,
+	defaults?: AreaWeights
+): AreaWeights {
+	return subject.areaWeights ?? defaults ?? DEFAULT_AREA_WEIGHTS;
 }
 
 /** Course views per subject, in display order. */
 export function subjectCourses(snapshot: Snapshot): SubjectCourses[] {
 	const { data } = snapshot;
 	return sortedSubjects(data.subjects).map((subject) => {
+		const weights = subjectWeights(subject, snapshot.settings.areaWeights);
 		const courses: SubjectCourses['courses'] = {};
 		for (const c of data.courses.filter((c) => c.subjectId === subject.id)) {
 			const g = data.grades.filter((g) => g.subjectId === subject.id && g.halfYear === c.halfYear);
-			courses[c.halfYear as HalfYear] = courseView(c, g, data.gradeTypes);
+			courses[c.halfYear as HalfYear] = courseView(c, g, data.gradeTypes, weights);
 		}
-		return { subject, courses };
+		return { subject, weights, courses };
 	});
 }
 

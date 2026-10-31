@@ -1,5 +1,11 @@
 import { HALF_YEARS, type Category, type HalfYear } from '@oberstufen-planer/abi-engine-bw';
-import { CATEGORY_LABELS } from '@oberstufen-planer/abi-engine-bw';
+import {
+	AREAS,
+	AREA_LABELS,
+	CATEGORY_LABELS,
+	parsePercent,
+	type AreaWeights
+} from '@oberstufen-planer/abi-engine-bw';
 
 export class FormError extends Error {}
 
@@ -73,4 +79,21 @@ export function halfYearList(values: unknown[]): HalfYear[] {
 export function color(value: unknown): string {
 	if (typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value)) return value;
 	throw new FormError('Ungültige Farbe.');
+}
+
+/** Reads w_schriftlich / w_muendlich / w_praktisch (percent or "1/3"). */
+export function areaWeights(fd: FormData): AreaWeights {
+	const out = {} as AreaWeights;
+	for (const a of AREAS) {
+		const raw = String(fd.get(`w_${a}`) ?? '').trim();
+		const v = raw === '' ? 0 : parsePercent(raw);
+		if (v === null)
+			throw new FormError(
+				`${AREA_LABELS[a]}: bitte Prozent (z. B. 75) oder einen Bruch (z. B. 1/3) eingeben.`
+			);
+		out[a] = v;
+	}
+	if (AREAS.every((a) => out[a] === 0))
+		throw new FormError('Mindestens ein Bereich braucht ein Gewicht.');
+	return out;
 }

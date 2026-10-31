@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { calculate } from './calculate.ts';
-import { halfYearPoints } from './halfyear.ts';
 import { minTotalForGrade, requiredExamPoints } from './target.ts';
 import type { Category, ExamKind, HalfYear, Level, PlanInput, SubjectInput } from './types.ts';
 
@@ -356,60 +355,5 @@ describe('target calculator', () => {
 		const input = student({ deutsch: 5, mathe: 5, englisch: 5 });
 		input.subjects.forEach((s) => (s.examResult = {}));
 		expect(requiredExamPoints(input, 1.0).examPoints).toBeNull();
-	});
-});
-
-describe('halfYearPoints', () => {
-	it('weights grade types and rounds half up', () => {
-		const types = [
-			{ id: 'klausur', weight: 2 },
-			{ id: 'muendlich', weight: 1 }
-		];
-		// Klausuren avg 10, mündlich 13 → (20 + 13) / 3 = 11
-		expect(
-			halfYearPoints(
-				[
-					{ points: 9, typeId: 'klausur' },
-					{ points: 11, typeId: 'klausur' },
-					{ points: 13, typeId: 'muendlich' }
-				],
-				types
-			)
-		).toEqual({ exact: 11, points: 11 });
-		// 10.5 → 11
-		expect(
-			halfYearPoints(
-				[
-					{ points: 10, typeId: 'klausur' },
-					{ points: 11, typeId: 'klausur' }
-				],
-				types
-			)?.points
-		).toBe(11);
-	});
-
-	it('ignores types without grades and returns null without grades', () => {
-		expect(
-			halfYearPoints(
-				[{ points: 7, typeId: 'muendlich' }],
-				[
-					{ id: 'klausur', weight: 2 },
-					{ id: 'muendlich', weight: 1 }
-				]
-			)?.points
-		).toBe(7);
-		expect(halfYearPoints([], [])).toBeNull();
-	});
-
-	it('supports per-grade weights', () => {
-		expect(
-			halfYearPoints(
-				[
-					{ points: 6, typeId: 'k', weight: 1 },
-					{ points: 12, typeId: 'k', weight: 2 }
-				],
-				[{ id: 'k', weight: 1 }]
-			)
-		).toEqual({ exact: 10, points: 10 });
 	});
 });

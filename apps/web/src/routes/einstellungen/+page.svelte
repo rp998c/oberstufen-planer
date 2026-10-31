@@ -2,6 +2,8 @@
 	import { enhance } from '$app/forms';
 	import { REMINDER_PRESETS } from '$lib/calendar.ts';
 	import PushToggle from '$lib/components/PushToggle.svelte';
+	import WeightsInput from '$lib/components/WeightsInput.svelte';
+	import { AREAS, AREA_LABELS } from '@oberstufen-planer/abi-engine-bw';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -32,77 +34,87 @@
 </section>
 
 <section class="card">
-	<h2>Notenarten und Gewichtung</h2>
+	<h2>Gewichtung</h2>
 	<p class="muted">
-		Aus den Noten eines Halbjahrs wird pro Art der Durchschnitt gebildet und dann nach dem Gewicht
-		verrechnet. Beispiel: Klausur 2, Mündlich 1 → Klausuren zählen doppelt. Frag am besten deine
-		Lehrkräfte, wie sie gewichten.
+		Die Halbjahresnote setzt sich aus Bereichen zusammen: schriftlich (Klausuren, Tests, GFS),
+		mündlich und – z. B. in Sport oder BK – praktisch. Hier stellst du die Standard-Gewichtung ein;
+		abweichende Fächer bekommen unter <a href="/faecher">Fächer</a> ihre eigene.
+	</p>
+	<form
+		method="POST"
+		action="?/defaultWeights"
+		use:enhance={() =>
+			async ({ update }) =>
+				update({ reset: false })}
+		class="stack"
+	>
+		<WeightsInput value={data.areaWeights} />
+		<div class="actions">
+			<button type="submit" class="secondary">Standard speichern</button>
+			{#if form?.saved === 'weights'}<span class="ok">Gespeichert</span>{/if}
+		</div>
+	</form>
+</section>
+
+<section class="card">
+	<h2>Notenarten</h2>
+	<p class="muted">
+		Jede Notenart gehört zu einem Bereich. Bei <strong>Tests</strong> wird der Schnitt aller Tests eines
+		Halbjahrs gebildet; er zählt dann wie eine Klausur (oder wie viele du einstellst).
 	</p>
 	<ul class="types">
 		{#each data.gradeTypes as t (t.id)}
-			<li>
-				<form method="POST" action="?/saveType" use:enhance class="actions">
-					<input type="hidden" name="id" value={t.id} />
-					<input
-						name="name"
-						value={t.name}
-						required
-						maxlength="40"
-						aria-label="Name"
-						class="name"
-					/>
-					<input
-						name="weight"
-						type="number"
-						min="0"
-						max="10"
-						step="0.5"
-						value={t.weight}
-						aria-label="Gewicht"
-						class="narrow"
-					/>
-					<button type="submit" class="secondary">Speichern</button>
-				</form>
-				{#if !t.used}
-					<form method="POST" action="?/deleteType" use:enhance>
-						<input type="hidden" name="id" value={t.id} />
-						<button type="submit" class="link">Löschen</button>
-					</form>
-				{/if}
-			</li>
+			<li>{@render typeForm(t)}</li>
 		{/each}
-		<li>
-			<form
-				method="POST"
-				action="?/saveType"
-				use:enhance={() =>
-					async ({ update }) =>
-						update({ reset: true })}
-				class="actions"
-			>
-				<input
-					name="name"
-					placeholder="Neue Notenart"
-					required
-					maxlength="40"
-					aria-label="Name"
-					class="name"
-				/>
-				<input
-					name="weight"
-					type="number"
-					min="0"
-					max="10"
-					step="0.5"
-					value="1"
-					aria-label="Gewicht"
-					class="narrow"
-				/>
-				<button type="submit">Hinzufügen</button>
-			</form>
-		</li>
+		<li>{@render typeForm()}</li>
 	</ul>
 </section>
+
+{#snippet typeForm(t?: PageData['gradeTypes'][number])}
+	<form
+		method="POST"
+		action="?/saveType"
+		use:enhance={() =>
+			async ({ update }) =>
+				update({ reset: !t })}
+		class="type"
+	>
+		<input type="hidden" name="id" value={t?.id ?? ''} />
+		<input
+			name="name"
+			value={t?.name ?? ''}
+			placeholder="Neue Notenart"
+			required
+			maxlength="40"
+			aria-label="Name"
+			class="name"
+		/>
+		<select name="area" aria-label="Bereich" value={t?.area ?? 'schriftlich'}>
+			{#each AREAS as a (a)}<option value={a}>{AREA_LABELS[a]}</option>{/each}
+		</select>
+		<label class="inline test">
+			<input type="checkbox" name="isTest" checked={t ? t.groupAs !== null : false} />
+			Test: alle zusammen zählen wie
+			<input
+				name="groupAs"
+				type="number"
+				min="0.5"
+				max="10"
+				step="0.5"
+				value={t?.groupAs ?? 1}
+				aria-label="Anzahl Klausuren"
+				class="tiny"
+			/>
+			Note(n)
+		</label>
+		<span class="actions">
+			<button type="submit" class={t ? 'secondary' : ''}>{t ? 'Speichern' : 'Hinzufügen'}</button>
+			{#if t && !t.used}
+				<button type="submit" formaction="?/deleteType" class="link">Löschen</button>
+			{/if}
+		</span>
+	</form>
+{/snippet}
 
 <section class="card">
 	<h2>Erinnerungen</h2>
@@ -404,8 +416,24 @@
 		align-items: center;
 		flex-wrap: wrap;
 	}
-	.types li > form:first-child {
-		flex: 1;
+	.type {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem 0.6rem;
+		align-items: center;
+		width: 100%;
+		padding: 0.5rem 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.type select {
+		flex: 0 1 9rem;
+	}
+	.test {
+		font-size: 0.85rem;
+		flex-wrap: wrap;
+	}
+	.tiny {
+		width: 4rem;
 	}
 	.types form {
 		margin: 0;
