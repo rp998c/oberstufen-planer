@@ -6,17 +6,19 @@
 	"files": [
 		"build",
 		"drizzle",
-		"scripts"
+		"scripts",
+		"server.js"
 	],
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"start": "node build",
+		"start": "node server.js",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest run",
 		"db:generate": "drizzle-kit generate",
-		"hash-password": "node scripts/hash-password.js"
+		"hash-password": "node scripts/hash-password.js",
+		"reset-password": "node scripts/reset-password.js"
 	},
 	"dependencies": {
 		"@node-rs/argon2": "^2.0.2",

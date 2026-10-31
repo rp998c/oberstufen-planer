@@ -27,13 +27,14 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY --from=build /out .
-COPY docker/hash-password /usr/local/bin/hash-password
-RUN chmod +x /usr/local/bin/hash-password \
+COPY docker/hash-password docker/reset-password /usr/local/bin/
+RUN chmod +x /usr/local/bin/hash-password /usr/local/bin/reset-password \
 	&& mkdir -p /data && chown node:node /data
 
-USER node
+# Starts as root only to hand /data to PUID:PGID (default 1000 = user "node"),
+# then the app drops to that user (see scripts/drop-privileges.js).
 VOLUME /data
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
-	CMD wget -qO- http://127.0.0.1:3000/healthz >/dev/null || exit 1
-CMD ["node", "build"]
+	CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/healthz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+CMD ["node", "server.js"]

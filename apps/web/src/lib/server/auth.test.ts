@@ -2,7 +2,12 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
 	LoginThrottle,
+	changePassword,
 	createSession,
+	deleteOtherSessions,
+	getPasswordHash,
+	setInitialPassword,
+	verifyPassword,
 	deleteExpiredSessions,
 	deleteSession,
 	safeRedirectTarget,
@@ -88,5 +93,40 @@ describe('safeRedirectTarget', () => {
 		expect(safeRedirectTarget('https://evil.example')).toBe('/');
 		expect(safeRedirectTarget('//evil.example')).toBe('/');
 		expect(safeRedirectTarget('/\\evil.example')).toBe('/');
+	});
+});
+
+describe('password in the app', () => {
+	it('uses APP_PASSWORD_HASH first, otherwise the stored hash', async () => {
+		const db = openDb(':memory:', migrations);
+		expect(getPasswordHash(db, '')).toBeNull();
+		expect(await setInitialPassword(db, 'geheim123')).toBe(true);
+		const stored = getPasswordHash(db, '')!;
+		expect(stored.startsWith('$argon2')).toBe(true);
+		expect(getPasswordHash(db, '$argon2id$env')).toBe('$argon2id$env');
+		expect(await verifyPassword(stored, 'geheim123')).toBe(true);
+		expect(await verifyPassword(stored, 'falsch')).toBe(false);
+	});
+
+	it('sets the first password only once', async () => {
+		const db = openDb(':memory:', migrations);
+		const results = await Promise.all([
+			setInitialPassword(db, 'erstes123'),
+			setInitialPassword(db, 'zweites123')
+		]);
+		expect(results.filter(Boolean)).toHaveLength(1);
+		expect(await setInitialPassword(db, 'drittes123')).toBe(false);
+	});
+
+	it('changes the password and logs out other devices', async () => {
+		const db = openDb(':memory:', migrations);
+		await setInitialPassword(db, 'alt12345');
+		const mine = createSession(db, 90);
+		const other = createSession(db, 90);
+		await changePassword(db, 'neu12345');
+		deleteOtherSessions(db, mine.token);
+		expect(await verifyPassword(getPasswordHash(db, '')!, 'neu12345')).toBe(true);
+		expect(validateSession(db, mine.token, 90)).not.toBeNull();
+		expect(validateSession(db, other.token, 90)).toBeNull();
 	});
 });

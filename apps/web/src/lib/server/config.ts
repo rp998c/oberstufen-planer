@@ -4,6 +4,7 @@ export type AuthMode = 'password' | 'none';
 
 export interface Config {
 	auth: AuthMode;
+	/** Hash from APP_PASSWORD_HASH, or '' if the password is managed in the app. */
 	passwordHash: string;
 	dataDir: string;
 	migrationsDir: string;
@@ -21,12 +22,12 @@ export function getConfig(): Config {
 		throw new Error(`AUTH must be "password" or "none", got "${env.AUTH}"`);
 	}
 
+	// Optional: without it, the password is set in the app on first start and kept in the database.
 	const passwordHash = (env.APP_PASSWORD_HASH ?? '').trim();
-	if (auth === 'password' && !passwordHash.startsWith('$argon2')) {
+	if (passwordHash && !passwordHash.startsWith('$argon2')) {
 		throw new Error(
-			'APP_PASSWORD_HASH is missing or not an Argon2 hash. Create one with ' +
-				'"docker run --rm -it <image> hash-password" (or "pnpm --filter web hash-password"), ' +
-				'or set AUTH=none if the app runs behind your own authentication.'
+			'APP_PASSWORD_HASH is not an Argon2 hash. Remove it to set the password in the app, ' +
+				'or create one with "docker run --rm -it <image> hash-password".'
 		);
 	}
 

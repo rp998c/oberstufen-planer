@@ -1,5 +1,10 @@
 import { redirect, type Handle, type ServerInit } from '@sveltejs/kit';
-import { SESSION_COOKIE, deleteExpiredSessions, validateSession } from '$lib/server/auth.ts';
+import {
+	SESSION_COOKIE,
+	deleteExpiredSessions,
+	getPasswordHash,
+	validateSession
+} from '$lib/server/auth.ts';
 import { getConfig } from '$lib/server/config.ts';
 import { ensureDefaults } from '$lib/server/data.ts';
 import { getDb } from '$lib/server/instance.ts';
@@ -12,15 +17,25 @@ export const init: ServerInit = () => {
 	ensureDefaults(getDb());
 	startReminderLoop(getDb());
 	console.log(`Oberstufen-Planer started (AUTH=${config.auth}, DATA_DIR=${config.dataDir})`);
+	if (config.auth === 'password' && !getPasswordHash(getDb(), config.passwordHash)) {
+		console.log('Noch kein Passwort festgelegt – beim ersten Aufruf der App wird danach gefragt.');
+	}
 };
 
-const PUBLIC_PATHS = new Set(['/login', '/healthz']);
+const PUBLIC_PATHS = new Set(['/login', '/healthz', '/passwort-festlegen']);
+const SETUP_PATH = '/passwort-festlegen';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const config = getConfig();
 
 	if (config.auth === 'none') {
 		event.locals.authenticated = true;
+	} else if (!getPasswordHash(getDb(), config.passwordHash)) {
+		// first start: nobody can log in yet, everything leads to the set-password page
+		event.locals.authenticated = false;
+		if (event.url.pathname !== SETUP_PATH && event.url.pathname !== '/healthz') {
+			redirect(303, SETUP_PATH);
+		}
 	} else {
 		const token = event.cookies.get(SESSION_COOKIE);
 		const session = token ? validateSession(getDb(), token, config.sessionDays) : null;

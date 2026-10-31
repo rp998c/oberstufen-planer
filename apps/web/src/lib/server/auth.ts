@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { eq, lt } from 'drizzle-orm';
+import { eq, lt, ne } from 'drizzle-orm';
+import { hash, verify } from '@node-rs/argon2';
 import type { Db } from './db/index.ts';
-import { sessions } from './db/schema.ts';
+import { sessions, settings } from './db/schema.ts';
 
 export const SESSION_COOKIE = 'op_session';
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -85,4 +86,47 @@ export function safeRedirectTarget(target: string | null | undefined): string {
 		return '/';
 	}
 	return target;
+}
+
+export function deleteOtherSessions(db: Db, keepToken: string) {
+	db.delete(sessions)
+		.where(ne(sessions.id, hashToken(keepToken)))
+		.run();
+}
+
+// ---- password ---------------------------------------------------------------------------
+
+/** The password hash: from APP_PASSWORD_HASH if set, otherwise the one stored in the app. */
+export function getPasswordHash(db: Db, envHash: string): string | null {
+	if (envHash) return envHash;
+	const row = db.select().from(settings).where(eq(settings.key, 'passwordHash')).get();
+	return typeof row?.value === 'string' ? row.value : null;
+}
+
+export const MIN_PASSWORD_LENGTH = 8;
+
+/**
+ * Stores the first password. Returns false if a password exists already
+ * (two browsers racing through the first-run page).
+ */
+export async function setInitialPassword(db: Db, password: string): Promise<boolean> {
+	const value = await hash(password);
+	const result = db
+		.insert(settings)
+		.values({ key: 'passwordHash', value })
+		.onConflictDoNothing()
+		.run();
+	return result.changes === 1;
+}
+
+export async function changePassword(db: Db, password: string) {
+	const value = await hash(password);
+	db.insert(settings)
+		.values({ key: 'passwordHash', value })
+		.onConflictDoUpdate({ target: settings.key, set: { value } })
+		.run();
+}
+
+export async function verifyPassword(hashValue: string, password: string): Promise<boolean> {
+	return verify(hashValue, password).catch(() => false);
 }
