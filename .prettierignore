@@ -5,3 +5,5 @@ build
 apps/web/drizzle/meta
 docs
 data
+apps/mobile/android
+apps/mobile/dist

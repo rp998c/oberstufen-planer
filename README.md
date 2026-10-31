@@ -74,6 +74,20 @@ abi.example.org {
 3. Unter **Noten** Einzelnoten oder direkt die Zeugnisnoten eintragen.
 4. Optional: **Kalender** befüllen, Erinnerungen einrichten, App zum Home-Bildschirm hinzufügen.
 
+### Android-App
+
+Die App speichert deine Daten auf dem Handy, funktioniert offline und gleicht sich automatisch mit
+deinem Server ab. Erinnerungen an Klausuren zeigt das Handy selbst an – ohne Push-Dienst und ohne Internet.
+
+1. Auf dem Handy die aktuelle APK laden:
+   [oberstufen-planer.apk](https://github.com/rp998c/oberstufen-planer/releases/download/android-latest/oberstufen-planer.apk)
+2. Öffnen und installieren (Android fragt einmalig, ob der Browser Apps installieren darf).
+3. In der App die Adresse deines Servers (wie im Browser, z. B. `192.168.1.10:3000`) und dein Passwort eingeben.
+
+Angemeldete Handys stehen unter **Einstellungen → Android-App** und lassen sich dort abmelden.
+In der App gibt es Übersicht, Noten, Kalender und Aufgaben; Einrichtung, Abitur-Prüfungen,
+Was-wäre-wenn und Stundenplan bleiben in der Web-Version.
+
 ### Erinnerungen
 
 - **Push:** unter Einstellungen „Push auf diesem Gerät aktivieren“. Braucht HTTPS. Auf dem iPhone muss die App vorher zum Home-Bildschirm hinzugefügt werden.
@@ -123,5 +137,7 @@ Beim ersten Aufruf fragt die App nach einem Passwort (gespeichert in `apps/web/d
 ```
 apps/web                 SvelteKit-App (UI, API, SQLite über Drizzle)
 packages/abi-engine-bw   Abitur-Berechnung für Baden-Württemberg (reines TypeScript)
+packages/app-core        Gemeinsamer Code von Server und App (Abgleich, Änderungen, Erinnerungen)
+apps/mobile              Android-App (Svelte + Capacitor)
 docs/PLAN.md             Plan und Meilensteine
 ```

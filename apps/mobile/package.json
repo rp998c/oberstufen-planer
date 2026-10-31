@@ -1,0 +1,33 @@
+{
+	"name": "mobile",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Android app (Capacitor): offline storage, sync with the server, local reminders",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-check --tsconfig ./tsconfig.json",
+		"android:sync": "vite build && cap sync android",
+		"android:build": "vite build && cap sync android && cd android && ./gradlew assembleDebug"
+	},
+	"dependencies": {
+		"@capacitor/android": "^7.6.10",
+		"@capacitor/app": "^7.1.2",
+		"@capacitor/core": "^7.6.10",
+		"@capacitor/local-notifications": "^7.0.7",
+		"@capacitor/network": "^7.0.4",
+		"@capacitor/preferences": "^7.0.4"
+	},
+	"devDependencies": {
+		"@capacitor/cli": "^7.6.10",
+		"@oberstufen-planer/abi-engine-bw": "workspace:*",
+		"@oberstufen-planer/app-core": "workspace:*",
+		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"svelte": "^5.57.3",
+		"svelte-check": "^4.7.7",
+		"typescript": "^5.9.3",
+		"vite": "^7.3.7"
+	}
+}

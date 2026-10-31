@@ -8,6 +8,8 @@ import {
 	SESSION_COOKIE,
 	changePassword,
 	deleteOtherSessions,
+	deleteSessionById,
+	listAppSessions,
 	getPasswordHash,
 	verifyPassword
 } from '$lib/server/auth.ts';
@@ -36,6 +38,12 @@ export const load: PageServerLoad = ({ url }) => {
 		ntfy: getNtfy(db),
 		reminderDefaults: getDefaultReminders(db),
 		pushDevices: db.select().from(pushSubscriptions).all().length,
+		appDevices: listAppSessions(db).map((d) => ({
+			id: d.id,
+			name: d.name ?? 'Android',
+			createdAt: d.createdAt.getTime(),
+			lastSeenAt: d.lastSeenAt?.getTime() ?? null
+		})),
 		password: getConfig().auth === 'none' ? 'none' : getConfig().passwordHash ? 'env' : 'app'
 	};
 };
@@ -172,5 +180,11 @@ export const actions: Actions = {
 		const token = cookies.get(SESSION_COOKIE);
 		if (token) deleteOtherSessions(db, token);
 		return { saved: 'password' };
+	},
+	revokeDevice: async ({ request }) => {
+		const id = String((await request.formData()).get('id') ?? '');
+		const db = getDb();
+		if (listAppSessions(db).some((d) => d.id === id)) deleteSessionById(db, id);
+		return { saved: 'devices' };
 	}
 };
