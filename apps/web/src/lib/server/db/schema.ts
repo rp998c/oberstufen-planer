@@ -30,7 +30,13 @@ export const subjects = sqliteTable('subjects', {
 	exam: text('exam'),
 	fromClass8: integer('from_class8', { mode: 'boolean' }).notNull().default(true),
 	color: text('color').notNull(),
-	sortOrder: integer('sort_order').notNull().default(0)
+	sortOrder: integer('sort_order').notNull().default(0),
+	/** Weighting of schriftlich/mündlich/praktisch for this subject; null = the default from the settings. */
+	areaWeights: text('area_weights', { mode: 'json' }).$type<{
+		schriftlich: number;
+		muendlich: number;
+		praktisch: number;
+	} | null>()
 });
 
 /**
@@ -50,12 +56,17 @@ export const courses = sqliteTable(
 	(t) => [primaryKey({ columns: [t.subjectId, t.halfYear] })]
 );
 
-/** Kinds of grades with their weight for the half-year grade (Klausur, mündlich, GFS …). */
+/** Kinds of grades (Klausur, Test, mündlich, GFS, praktisch …) and the area they count in. */
 export const gradeTypes = sqliteTable('grade_types', {
 	id: text('id').primaryKey(),
 	name: text('name').notNull(),
+	/** No longer used (weighting is per subject and area since #11); kept for old databases. */
 	weight: real('weight').notNull().default(1),
-	sortOrder: integer('sort_order').notNull().default(0)
+	sortOrder: integer('sort_order').notNull().default(0),
+	/** 'schriftlich' | 'muendlich' | 'praktisch' */
+	area: text('area').notNull().default('schriftlich'),
+	/** Tests: all grades of this type together count like this many single grades; null = each counts. */
+	groupAs: real('group_as')
 });
 
 /**

@@ -2,9 +2,17 @@ export * from './types.ts';
 export { gradeFromTotalPoints, formatGrade, MIN_TOTAL_POINTS, MAX_TOTAL_POINTS } from './grade.ts';
 export { examBlockIIPoints } from './exam.ts';
 export {
+	AREAS,
+	AREA_LABELS,
+	DEFAULT_AREA_WEIGHTS,
+	formatAreaWeights,
 	halfYearPoints,
+	parsePercent,
+	type Area,
+	type AreaResult,
+	type AreaWeights,
 	type GradeEntry,
-	type GradeTypeWeight,
+	type GradeTypeInfo,
 	type HalfYearPoints
 } from './halfyear.ts';
 export {

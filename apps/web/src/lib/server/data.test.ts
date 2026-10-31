@@ -1,3 +1,6 @@
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { calculate } from '@oberstufen-planer/abi-engine-bw';
@@ -10,6 +13,7 @@ import {
 	loadAll,
 	setCourse,
 	setExam,
+	setSetting,
 	toPlanInput,
 	updateSubject,
 	type SubjectData
@@ -37,10 +41,12 @@ describe('data layer', () => {
 	it('creates the default grade types once', () => {
 		const db = setup();
 		ensureDefaults(db);
-		expect(listGradeTypes(db).map((t) => t.name)).toEqual([
-			'Klausur',
-			'Mündlich / Mitarbeit',
-			'GFS'
+		expect(listGradeTypes(db).map((t) => [t.name, t.area, t.groupAs])).toEqual([
+			['Klausur', 'schriftlich', null],
+			['Test', 'schriftlich', 1],
+			['Mündlich / Mitarbeit', 'muendlich', null],
+			['GFS', 'schriftlich', null],
+			['Praktisch', 'praktisch', null]
 		]);
 	});
 
@@ -55,7 +61,9 @@ describe('data layer', () => {
 	it('picks the report card grade over the forecast over the grades', () => {
 		const db = setup();
 		const id = createSubject(db, deutsch);
-		const [klausur, muendlich] = listGradeTypes(db);
+		const types = listGradeTypes(db);
+		const klausur = types.find((t) => t.name === 'Klausur');
+		const muendlich = types.find((t) => t.area === 'muendlich');
 		const base = {
 			subjectId: id,
 			halfYear: 1 as const,
@@ -72,7 +80,7 @@ describe('data layer', () => {
 
 		let c = loadAll(db).subjects[0]!.courses[1]!;
 		expect(c.source).toBe('noten');
-		expect(c.fromGrades).toEqual({ exact: 11, points: 11 }); // (2·10 + 13) / 3
+		expect(c.fromGrades).toMatchObject({ exact: 11, points: 11 }); // (2·10 + 13) / 3
 		expect(c.fromGradesProjected!.exact).toBeCloseTo((2 * 10 + 10) / 3); // mündlich (13 + 7) / 2
 		expect(c.effective).toBe(10);
 		expect(c.openCount).toBe(1);
@@ -125,5 +133,67 @@ describe('data layer', () => {
 		expect(s.courses[3]).toEqual({ points: null, forecast: null });
 		expect(s.examResult?.writtenForecast).toBe(11);
 		expect(() => calculate(input)).not.toThrow();
+	});
+
+	it("uses the subject's own weighting, else the default", () => {
+		const db = setup();
+		const id = createSubject(db, deutsch);
+		const types = listGradeTypes(db);
+		const k = types.find((t) => t.name === 'Klausur')!.id;
+		const m = types.find((t) => t.area === 'muendlich')!.id;
+		const base = {
+			subjectId: id,
+			halfYear: 1 as const,
+			forecast: null,
+			weight: 1,
+			date: null,
+			note: ''
+		};
+		createGrade(db, { ...base, gradeTypeId: k, points: 6 });
+		createGrade(db, { ...base, gradeTypeId: m, points: 12 });
+		// default 2/3 : 1/3 → 8
+		expect(loadAll(db).subjects[0]!.courses[1]!.fromGrades!.exact).toBeCloseTo(8);
+		setSetting(db, 'areaWeights', { schriftlich: 50, muendlich: 50, praktisch: 0 });
+		expect(loadAll(db).subjects[0]!.courses[1]!.fromGrades!.exact).toBeCloseTo(9);
+		updateSubject(db, id, {
+			...deutsch,
+			areaWeights: { schriftlich: 25, muendlich: 75, praktisch: 0 }
+		});
+		expect(loadAll(db).subjects[0]!.courses[1]!.fromGrades!.exact).toBeCloseTo(10.5);
+		expect(loadAll(db).subjects[0]!.weights).toEqual({
+			schriftlich: 25,
+			muendlich: 75,
+			praktisch: 0
+		});
+	});
+});
+
+describe('migration of existing installs (#10, #11)', () => {
+	it('assigns areas to old grade types and adds Test and Praktisch', () => {
+		// database at the state before the weighting change, with the old default types
+		const dir = mkdtempSync(join(tmpdir(), 'op-mig-'));
+		const oldMigrations = join(dir, 'drizzle');
+		cpSync(migrations, oldMigrations, { recursive: true });
+		const journalPath = join(oldMigrations, 'meta', '_journal.json');
+		const journal = JSON.parse(readFileSync(journalPath, 'utf8'));
+		journal.entries = journal.entries.filter((e: { tag: string }) => !/weighting/.test(e.tag));
+		writeFileSync(journalPath, JSON.stringify(journal));
+		const file = join(dir, 'app.db');
+		const old = openDb(file, oldMigrations);
+		for (const [i, name] of ['Klausur', 'Mündlich / Mitarbeit', 'GFS'].entries()) {
+			old.$client
+				.prepare('INSERT INTO grade_types (id, name, weight, sort_order) VALUES (?, ?, 1, ?)')
+				.run(`t${i}`, name, i);
+		}
+		old.$client.close();
+
+		const db = openDb(file, migrations);
+		expect(listGradeTypes(db).map((t) => [t.name, t.area, t.groupAs])).toEqual([
+			['Klausur', 'schriftlich', null],
+			['Mündlich / Mitarbeit', 'muendlich', null],
+			['GFS', 'schriftlich', null],
+			['Test', 'schriftlich', 1],
+			['Praktisch', 'praktisch', null]
+		]);
 	});
 });

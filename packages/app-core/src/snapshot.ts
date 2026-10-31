@@ -1,4 +1,6 @@
 import type {
+	Area,
+	AreaWeights,
 	BllInput,
 	Category,
 	ExamKind,
@@ -16,6 +18,8 @@ export interface SubjectRow {
 	fromClass8: boolean;
 	color: string;
 	sortOrder: number;
+	/** Own weighting of the areas, null = default from the settings. */
+	areaWeights: AreaWeights | null;
 }
 
 export interface CourseRow {
@@ -28,8 +32,12 @@ export interface CourseRow {
 export interface GradeTypeRow {
 	id: string;
 	name: string;
+	/** Unused since per-subject weighting (#11). */
 	weight: number;
 	sortOrder: number;
+	area: Area;
+	/** Tests: all grades of this type together count like this many grades; null = each counts. */
+	groupAs: number | null;
 }
 
 export interface GradeRow {
@@ -98,6 +106,8 @@ export interface SnapshotSettings {
 	overrides?: Overrides;
 	reminderDefaults?: number[];
 	timetable?: { periods: number; saturday: boolean };
+	/** Default weighting of the areas for subjects without their own. */
+	areaWeights?: AreaWeights;
 }
 
 export interface SnapshotData {

@@ -2,6 +2,8 @@
 	import { enhance } from '$app/forms';
 	import { CATEGORY_LABELS } from '@oberstufen-planer/abi-engine-bw';
 	import { HALF_YEAR_LABELS } from '$lib/subjects.ts';
+	import WeightsInput from '$lib/components/WeightsInput.svelte';
+	import { formatAreaWeights } from '@oberstufen-planer/abi-engine-bw';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -11,6 +13,8 @@
 	let level = $state(data.subject.level);
 	// svelte-ignore state_referenced_locally
 	let category = $state(data.subject.category);
+	// svelte-ignore state_referenced_locally
+	let customWeights = $state(data.subject.areaWeights !== null);
 </script>
 
 <svelte:head
@@ -76,6 +80,33 @@
 		{/each}
 	</fieldset>
 
+	<fieldset class="weighting">
+		<legend>Gewichtung der Halbjahresnote</legend>
+		<label class="inline"
+			><input
+				type="radio"
+				name="customWeights"
+				value=""
+				checked={!customWeights}
+				onchange={() => (customWeights = false)}
+			/>
+			Standard ({formatAreaWeights(data.defaultWeights)})</label
+		>
+		<label class="inline"
+			><input
+				type="radio"
+				name="customWeights"
+				value="on"
+				checked={customWeights}
+				onchange={() => (customWeights = true)}
+			/>
+			Eigene Gewichtung für dieses Fach</label
+		>
+		{#if customWeights}
+			<WeightsInput value={data.subject.areaWeights ?? data.defaultWeights} />
+		{/if}
+	</fieldset>
+
 	<div class="field">
 		<label for="color">Farbe</label>
 		<input id="color" name="color" type="color" value={data.subject.color} class="color" />
@@ -121,6 +152,9 @@
 	}
 	.inline input {
 		width: auto;
+	}
+	.weighting {
+		display: grid;
 	}
 	.color {
 		width: 4rem;

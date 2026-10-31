@@ -14,10 +14,11 @@ import {
 	verifyPassword
 } from '$lib/server/auth.ts';
 import { getConfig } from '$lib/server/config.ts';
-import { getProfile, listGradeTypes, setSetting } from '$lib/server/data.ts';
+import { getAreaWeights, getProfile, listGradeTypes, setSetting } from '$lib/server/data.ts';
 import { gradeTypes, grades, pushSubscriptions } from '$lib/server/db/schema.ts';
 import { getDefaultReminders, getFeedToken } from '$lib/server/events.ts';
-import { FormError, intOrNull, num, str } from '$lib/server/form.ts';
+import { FormError, areaWeights, bool, intOrNull, num, str } from '$lib/server/form.ts';
+import { AREAS } from '@oberstufen-planer/abi-engine-bw';
 import { getDb } from '$lib/server/instance.ts';
 import { getNtfy, notify } from '$lib/server/notify.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -33,6 +34,7 @@ export const load: PageServerLoad = ({ url }) => {
 	);
 	return {
 		profile: getProfile(db),
+		areaWeights: getAreaWeights(db),
 		gradeTypes: listGradeTypes(db).map((t) => ({ ...t, used: used.has(t.id) })),
 		feedUrl: `${url.origin}/kalender/feed/${getFeedToken(db)}.ics`,
 		ntfy: getNtfy(db),
@@ -74,9 +76,12 @@ export const actions: Actions = {
 		return guard(() => {
 			const db = getDb();
 			const id = str(fd, 'id');
+			const area = str(fd, 'area');
+			if (!(AREAS as readonly string[]).includes(area)) throw new FormError('Ungültiger Bereich.');
 			const values = {
 				name: str(fd, 'name', { required: true, max: 40, label: 'Name' }),
-				weight: num(fd, 'weight', 0, 10, 'Gewicht')
+				area,
+				groupAs: bool(fd, 'isTest') ? num(fd, 'groupAs', 0.5, 10, 'Anzahl') : null
 			};
 			if (id) db.update(gradeTypes).set(values).where(eq(gradeTypes.id, id)).run();
 			else
@@ -84,6 +89,13 @@ export const actions: Actions = {
 					.values({ id: randomUUID(), ...values, sortOrder: listGradeTypes(db).length })
 					.run();
 			return { saved: 'types' };
+		});
+	},
+	defaultWeights: async ({ request }) => {
+		const fd = await request.formData();
+		return guard(() => {
+			setSetting(getDb(), 'areaWeights', areaWeights(fd));
+			return { saved: 'weights' };
 		});
 	},
 	deleteType: async ({ request }) => {

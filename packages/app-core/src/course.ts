@@ -1,5 +1,7 @@
 import {
+	DEFAULT_AREA_WEIGHTS,
 	halfYearPoints,
+	type AreaWeights,
 	type HalfYear,
 	type HalfYearPoints
 } from '@oberstufen-planer/abi-engine-bw';
@@ -29,19 +31,22 @@ export interface CourseView {
 export function courseView(
 	course: CourseRow,
 	courseGrades: GradeRow[],
-	types: GradeTypeRow[]
+	types: GradeTypeRow[],
+	weights: AreaWeights = DEFAULT_AREA_WEIGHTS
 ): CourseView {
 	const actual = courseGrades.filter((g) => g.points !== null);
 	const withForecasts = courseGrades
 		.map((g) => ({ ...g, p: g.points ?? g.forecast }))
 		.filter((g) => g.p !== null);
-	const weights = types.map((t) => ({ id: t.id, weight: t.weight }));
+	const typeInfo = types.map((t) => ({ id: t.id, area: t.area, groupAs: t.groupAs }));
 	const fromGrades = halfYearPoints(
 		actual.map((g) => ({ points: g.points!, typeId: g.gradeTypeId, weight: g.weight })),
+		typeInfo,
 		weights
 	);
 	const fromGradesProjected = halfYearPoints(
 		withForecasts.map((g) => ({ points: g.p!, typeId: g.gradeTypeId, weight: g.weight })),
+		typeInfo,
 		weights
 	);
 

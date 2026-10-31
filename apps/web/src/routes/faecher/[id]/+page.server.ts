@@ -3,12 +3,21 @@ import { SUBJECT_COLORS } from '$lib/subjects.ts';
 import {
 	createSubject,
 	deleteSubject,
+	getAreaWeights,
 	listSubjects,
 	loadAll,
 	updateSubject,
 	type SubjectData
 } from '$lib/server/data.ts';
-import { FormError, bool, category, color, halfYearList, str } from '$lib/server/form.ts';
+import {
+	FormError,
+	areaWeights,
+	bool,
+	category,
+	color,
+	halfYearList,
+	str
+} from '$lib/server/form.ts';
 import { getDb } from '$lib/server/instance.ts';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -24,8 +33,10 @@ export const load: PageServerLoad = ({ params }) => {
 				exam: null,
 				fromClass8: true,
 				color: SUBJECT_COLORS[listSubjects(db).length % SUBJECT_COLORS.length]!,
-				halfYears: [1, 2, 3, 4]
+				halfYears: [1, 2, 3, 4],
+				areaWeights: null
 			} satisfies SubjectData,
+			defaultWeights: getAreaWeights(db),
 			gradeCount: 0
 		};
 	}
@@ -41,8 +52,10 @@ export const load: PageServerLoad = ({ params }) => {
 			exam: s.exam,
 			fromClass8: s.fromClass8,
 			color: s.color,
-			halfYears: Object.values(s.courses).map((c) => c.halfYear)
+			halfYears: Object.values(s.courses).map((c) => c.halfYear),
+			areaWeights: s.areaWeights ?? null
 		} satisfies SubjectData,
+		defaultWeights: all.areaWeights,
 		gradeCount: all.grades.filter((g) => g.subjectId === s.id).length
 	};
 };
@@ -58,7 +71,8 @@ function parse(fd: FormData): SubjectData {
 		exam: level === 'LF' ? 'written' : bool(fd, 'oral') ? 'oral' : null,
 		fromClass8: bool(fd, 'fromClass8'),
 		color: color(fd.get('color')),
-		halfYears
+		halfYears,
+		areaWeights: bool(fd, 'customWeights') ? areaWeights(fd) : null
 	};
 }
 

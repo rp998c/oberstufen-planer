@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { HALF_YEAR_LABELS } from '$lib/subjects.ts';
+	import { AREA_LABELS, formatAreaWeights } from '@oberstufen-planer/abi-engine-bw';
 	import type { ActionData, PageData } from './$types';
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -10,6 +11,7 @@
 
 	const typeName = (id: string) => data.gradeTypes.find((t) => t.id === id)?.name ?? '?';
 	const fmt = (x: number) => x.toFixed(2).replace('.', ',');
+	const breakdown = $derived(data.course.fromGradesProjected ?? data.course.fromGrades);
 	const fmtDate = (d: string | null) =>
 		d ? new Date(d + 'T00:00:00').toLocaleDateString('de-DE') : '';
 	const today = new Date().toISOString().slice(0, 10);
@@ -51,6 +53,42 @@
 		</div>
 	{/if}
 </section>
+
+{#if breakdown}
+	<section class="card breakdown">
+		<table>
+			<thead>
+				<tr
+					><th>Bereich</th><th class="r">Noten</th><th class="r">Schnitt</th><th class="r"
+						>Anteil</th
+					></tr
+				>
+			</thead>
+			<tbody>
+				{#each breakdown.areas as a (a.area)}
+					<tr class:ignored={a.ignored}>
+						<td>{AREA_LABELS[a.area]}</td>
+						<td class="r">{a.count}</td>
+						<td class="r">{fmt(a.average)}</td>
+						<td class="r">{a.ignored ? '0 %' : `${Math.round(a.share * 100)} %`}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+		{#if breakdown.areas.some((a) => a.ignored)}
+			<p class="warn small">
+				Bereiche mit 0 % zählen in diesem Fach nicht. Gewichtung ändern unter
+				<a href="/faecher/{data.subject.id}">Fach bearbeiten</a>.
+			</p>
+		{/if}
+		<p class="muted small">
+			Gewichtung: {formatAreaWeights(data.subject.weights)}{data.subject.areaWeights
+				? ''
+				: ' (Standard)'}
+			· <a href="/faecher/{data.subject.id}">ändern</a>
+		</p>
+	</section>
+{/if}
 
 {#if form?.error}<p class="error" role="alert">{form.error}</p>{/if}
 
@@ -175,7 +213,9 @@
 			<label for="type-{g?.id ?? 'new'}">Art</label>
 			<select id="type-{g?.id ?? 'new'}" name="gradeTypeId" required>
 				{#each data.gradeTypes as t (t.id)}
-					<option value={t.id} selected={g ? g.gradeTypeId === t.id : undefined}>{t.name}</option>
+					<option value={t.id} selected={g ? g.gradeTypeId === t.id : undefined}
+						>{t.name} · {AREA_LABELS[t.area as keyof typeof AREA_LABELS] ?? ''}</option
+					>
 				{/each}
 			</select>
 		</div>
@@ -250,6 +290,23 @@
 	}
 	section {
 		margin-top: 1rem;
+	}
+	.breakdown table {
+		font-size: 0.9rem;
+	}
+	.breakdown .r {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+	.breakdown tr.ignored {
+		color: var(--muted);
+		text-decoration: line-through;
+	}
+	.breakdown p {
+		margin: 0.5rem 0 0;
+	}
+	.warn {
+		color: #b45309;
 	}
 	.summary {
 		display: flex;
