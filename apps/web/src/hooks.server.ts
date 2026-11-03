@@ -6,16 +6,15 @@ import {
 	validateSession
 } from '$lib/server/auth.ts';
 import { getConfig } from '$lib/server/config.ts';
-import { ensureDefaults } from '$lib/server/data.ts';
+import { getSnapshot } from '$lib/server/document.ts';
 import { getDb } from '$lib/server/instance.ts';
-import { startReminderLoop } from '$lib/server/reminders.ts';
 
 /** Runs once at server start: fail fast on bad configuration and apply DB migrations. */
 export const init: ServerInit = () => {
 	const config = getConfig();
 	deleteExpiredSessions(getDb());
-	ensureDefaults(getDb());
-	startReminderLoop(getDb());
+	// converts the data of older versions once
+	getSnapshot(getDb());
 	console.log(`Oberstufen-Planer started (AUTH=${config.auth}, DATA_DIR=${config.dataDir})`);
 	if (config.auth === 'password' && !getPasswordHash(getDb(), config.passwordHash)) {
 		console.log('Noch kein Passwort festgelegt – beim ersten Aufruf der App wird danach gefragt.');

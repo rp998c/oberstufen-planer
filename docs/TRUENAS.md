@@ -59,11 +59,11 @@ services:
 **Passwort vergessen:** In TrueNAS bei der App auf **Shell** klicken und `reset-password`
 eingeben. Beim nächsten Aufruf fragt die App nach einem neuen Passwort; die Daten bleiben erhalten.
 
-**Zugriff von unterwegs / Push-Benachrichtigungen:** Dafür braucht die App HTTPS, z. B. über einen
-Reverse-Proxy (Nginx Proxy Manager, Caddy, Traefik) oder ein VPN wie Tailscale. Erinnerungen über
-die ntfy-App funktionieren auch ohne HTTPS.
+**Zugriff von unterwegs:** über einen Reverse-Proxy mit HTTPS (Nginx Proxy Manager, Caddy, Traefik)
+oder ein VPN wie Tailscale. Erinnerungen zeigt die Android-App selbst an, dafür ist kein Zugriff von
+außen nötig.
 
 **Aktualisieren:** Neue Versionen erscheinen als neues Image `latest`. In TrueNAS die App aktualisieren
 bzw. das Image neu ziehen und die App neu starten. Die Daten bleiben im Volume erhalten.
 
-**Sichern:** In der App unter **Mehr → Einstellungen → Daten** eine Sicherung herunterladen.
+**Sichern:** In der App unter **Einstellungen → Daten** eine Sicherung herunterladen.

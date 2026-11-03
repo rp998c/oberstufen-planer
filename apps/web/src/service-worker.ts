@@ -47,7 +47,7 @@ sw.addEventListener('fetch', (event) => {
 		return;
 	}
 
-	// pages and their data: network first, fall back to the last copy (read-only offline use)
+	// the page: network first, fall back to the last copy (the data itself is kept in the browser)
 	event.respondWith(
 		(async () => {
 			try {
@@ -69,37 +69,4 @@ sw.addEventListener('fetch', (event) => {
 sw.addEventListener('message', (event) => {
 	// sent on logout: forget cached pages
 	if (event.data === 'clear-pages') event.waitUntil(caches.delete(PAGES_CACHE));
-});
-
-sw.addEventListener('push', (event) => {
-	let data: { title?: string; body?: string; url?: string } = {};
-	try {
-		data = event.data?.json() ?? {};
-	} catch {
-		data = { body: event.data?.text() };
-	}
-	event.waitUntil(
-		sw.registration.showNotification(data.title ?? 'Oberstufen-Planer', {
-			body: data.body ?? '',
-			icon: '/icon-192.png',
-			badge: '/icon-192.png',
-			data: { url: data.url ?? '/' }
-		})
-	);
-});
-
-sw.addEventListener('notificationclick', (event) => {
-	event.notification.close();
-	const url = (event.notification.data as { url?: string })?.url ?? '/';
-	event.waitUntil(
-		(async () => {
-			const windows = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
-			const existing = windows.find((w) => new URL(w.url).origin === sw.location.origin);
-			if (existing) {
-				await existing.navigate(url);
-				return existing.focus();
-			}
-			return sw.clients.openWindow(url);
-		})()
-	);
 });

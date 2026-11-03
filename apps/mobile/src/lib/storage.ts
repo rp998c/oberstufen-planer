@@ -18,3 +18,7 @@ export async function save(key: string, value: unknown): Promise<void> {
 export async function clearAll(): Promise<void> {
 	await Preferences.clear();
 }
+
+export async function remove(key: string): Promise<void> {
+	await Preferences.remove({ key });
+}

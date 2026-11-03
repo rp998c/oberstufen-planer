@@ -2,15 +2,15 @@
 
 Ein selbst gehosteter Abitur-Planer für **Baden-Württemberg**, für eine einzelne Person, als Docker-Container.
 
-- **Noten:** Einzelnoten pro Halbjahr mit Notenarten und Gewichtung, angekündigte („offene“) Noten, Zeugnisnoten und eigene Prognosen
-- **Abiturnote:** Block I und Block II nach dem Leitfaden des Kultusministeriums, Prüfung aller Zulassungsbedingungen, besondere Lernleistung
-- **Anrechnung:** wählt automatisch die besten 40 Kurse und die beiden doppelt gewichteten Leistungsfächer – oder du legst es selbst fest
-- **Hochrechnung:** „Was wäre wenn“ für jede Note und Prüfung, Zielrechner („Was brauche ich für eine 1,5?“)
-- **Übersicht:** hochgerechnete Abiturnote, Verlauf pro Fach, Unterkurse, nächste Termine
-- **Kalender:** Klausuren, GFS und Prüfungen, Import des Schulkalenders (.ics), Kalender-Abo fürs Handy, Erinnerungen per Push oder [ntfy](https://ntfy.sh)
-- **Stundenplan, Aufgaben, Lernziele**
-- **Daten:** Sicherung als JSON-Datei, druckbare Zusammenfassung (PDF)
-- Als App aufs Handy installierbar, offline lesbar, keine Telemetrie
+- **Noten:** pro Fach genau die Teile, die es dort gibt – Klausuren (LF 2, BF 1 pro Halbjahr), Tests, GFS, mündlich, praktisch – mit eigener Gewichtung, z. B. 2/3 : 1/3 oder 50 : 30 : 20
+- **Abiturnote:** Block I und Block II nach dem Leitfaden des Kultusministeriums, Prüfung aller Zulassungsbedingungen; offene Halbjahre werden aus deinen bisherigen Noten geschätzt
+- **Anrechnung:** wählt automatisch die besten 40 Kurse und die beiden doppelt gewichteten Leistungsfächer
+- **Ziel:** „Was brauche ich für eine 1,5?“ – Durchschnitt, den du ab jetzt in Kursen und Prüfungen brauchst
+- **Fächer:** alle Einstellungen in einer Tabelle, als Datei mit Mitschülern teilbar
+- **Kalender:** Liste und Monatsansicht, Import des Schulkalenders (.ics), Kalender-Abo für Google/Apple/Outlook
+- **Android-App:** funktioniert eigenständig ohne Server; Sync mit dem eigenen Server ist optional
+- **Darstellung:** dunkel (Standard) oder hell, fünf Akzentfarben, zwei App-Icons
+- **Daten:** Sicherung als JSON-Datei, druckbare Zusammenfassung (PDF), keine Telemetrie
 
 Der ursprüngliche Plan steht in [docs/PLAN.md](docs/PLAN.md).
 
@@ -59,7 +59,7 @@ Alles funktioniert ohne diese Variablen.
 | `PORT`              | `3000`          | Port im Container                                                                                  |
 | `TZ`                | `Europe/Berlin` | Zeitzone für Termine und Erinnerungen                                                              |
 
-Für den Zugriff von außen gehört ein Reverse-Proxy mit HTTPS davor (z. B. Caddy). Ohne HTTPS funktionieren die Installation als App und Push-Erinnerungen nicht (Ausnahme: `localhost`).
+Für den Zugriff von außen gehört ein Reverse-Proxy mit HTTPS davor (z. B. Caddy).
 
 Beispiel für Caddy (`Caddyfile`):
 
@@ -71,34 +71,29 @@ abi.example.org {
 
 ### Erste Schritte
 
-1. Passwort festlegen und unter **Einrichtung** Fächer, Leistungsfächer und mündliche Prüfungsfächer wählen.
-2. Unter **Mehr → Einstellungen** die Notenarten und ihre Gewichtung anpassen (Standard: Klausur 2, Mündlich 1, GFS 1).
-3. Unter **Noten** Einzelnoten oder direkt die Zeugnisnoten eintragen.
-4. Optional: **Kalender** befüllen, Erinnerungen einrichten, App zum Home-Bildschirm hinzufügen.
+1. Passwort festlegen, Abiturjahrgang wählen, dann Leistungsfächer, Basisfächer und mündliche Prüfungsfächer – die Einrichtung prüft dabei die Regeln.
+2. Noten eintragen: auf der Übersicht **Note eintragen** (Taste <kbd>N</kbd>) oder ein Fach öffnen und auf die offene Klausur tippen.
+3. Weicht die Gewichtung in einem Fach ab, direkt auf der Fachseite oder unter **Fächer** ändern.
+4. Sobald es Zeugnisse gibt, die Zeugnisnote auf der Fachseite eintragen – dann zählt nur noch sie.
 
 ### Android-App
 
-Die App speichert deine Daten auf dem Handy, funktioniert offline und gleicht sich automatisch mit
-deinem Server ab. Erinnerungen an Klausuren zeigt das Handy selbst an – ohne Push-Dienst und ohne Internet.
+Die App braucht keinen Server: alle Daten bleiben auf dem Handy, Erinnerungen an Klausuren zeigt das
+Handy selbst an.
 
 1. Auf dem Handy die aktuelle APK laden:
    [oberstufen-planer.apk](https://github.com/rp998c/oberstufen-planer/releases/download/android-latest/oberstufen-planer.apk)
 2. Öffnen und installieren (Android fragt einmalig, ob der Browser Apps installieren darf).
-3. In der App die Adresse deines Servers (wie im Browser, z. B. `192.168.1.10:3000`) und dein Passwort eingeben.
+3. **Los geht's** – oder **Mit eigenem Server verbinden**, um Handy und Browser auf demselben Stand zu halten.
 
-Angemeldete Handys stehen unter **Einstellungen → Android-App** und lassen sich dort abmelden.
-In der App gibt es Übersicht, Noten, Kalender und Aufgaben; Einrichtung, Abitur-Prüfungen,
-Was-wäre-wenn und Stundenplan bleiben in der Web-Version.
-
-### Erinnerungen
-
-- **Push:** unter Einstellungen „Push auf diesem Gerät aktivieren“. Braucht HTTPS. Auf dem iPhone muss die App vorher zum Home-Bildschirm hinzugefügt werden.
-- **ntfy:** Server und Thema eintragen und dasselbe Thema in der ntfy-App abonnieren. Auf `ntfy.sh` einen schwer zu erratenden Themennamen wählen.
-- Der Server prüft jede Minute, ob Erinnerungen fällig sind.
+Sync lässt sich jederzeit unter **Einstellungen → Sync** einschalten (Adresse wie im Browser, z. B.
+`192.168.1.10:3000`, und dein Passwort) und wieder trennen – die Daten bleiben auf dem Handy. Haben
+Handy und Server beim Verbinden schon Daten, fragt die App, welche gelten sollen. Angemeldete Handys
+stehen im Browser unter **Einstellungen → Geräte & Sync**.
 
 ### Kalender-Abo
 
-Unter Einstellungen steht eine geheime Adresse (`…/kalender/feed/<token>.ics`), die du im Kalender deines Handys abonnieren kannst. Sie funktioniert ohne Anmeldung – also nicht weitergeben. Bei Bedarf lässt sich eine neue Adresse erzeugen.
+Unter **Einstellungen → Kalender** steht eine geheime Adresse (`…/kalender/feed/<token>.ics`), die du im Kalender deines Handys abonnieren kannst. Sie funktioniert ohne Anmeldung – also nicht weitergeben. Bei Bedarf lässt sich eine neue Adresse erzeugen.
 
 ### Backup
 
@@ -137,9 +132,10 @@ Beim ersten Aufruf fragt die App nach einem Passwort (gespeichert in `apps/web/d
 ### Aufbau
 
 ```
-apps/web                 SvelteKit-App (UI, API, SQLite über Drizzle)
+packages/ui              Die Oberfläche (Svelte) – dieselbe im Browser und in der Android-App
+packages/app-core        Datenmodell, Änderungen, Berechnungen, Kalender-Import/-Export
 packages/abi-engine-bw   Abitur-Berechnung für Baden-Württemberg (reines TypeScript)
-packages/app-core        Gemeinsamer Code von Server und App (Abgleich, Änderungen, Erinnerungen)
-apps/mobile              Android-App (Svelte + Capacitor)
+apps/web                 Server (SvelteKit): Anmeldung, Speicherung und Sync, Kalender-Abo
+apps/mobile              Android-App (Capacitor) mit Speicherung auf dem Handy
 docs/PLAN.md             Plan und Meilensteine
 ```

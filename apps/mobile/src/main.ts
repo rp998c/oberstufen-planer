@@ -1,6 +1,6 @@
 import { mount } from 'svelte';
-import '../../web/src/app.css';
-import './mobile.css';
-import App from './App.svelte';
+import { App } from '@oberstufen-planer/ui';
+import { platform, wireNative } from './lib/platform.ts';
 
-mount(App, { target: document.getElementById('app')! });
+mount(App, { target: document.getElementById('app')!, props: { platform } });
+wireNative();

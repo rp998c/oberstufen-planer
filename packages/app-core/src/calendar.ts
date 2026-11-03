@@ -1,10 +1,10 @@
 export const EVENT_KINDS = {
 	klausur: 'Klausur',
+	test: 'Test',
 	gfs: 'GFS',
 	abi: 'Abiturprüfung',
 	sonstiges: 'Termin'
 } as const;
-export type EventKind = keyof typeof EVENT_KINDS;
 
 /** Reminder presets in minutes before the start (all-day entries start at 00:00). */
 export const REMINDER_PRESETS = [

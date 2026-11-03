@@ -16,14 +16,18 @@
 		"@capacitor/android": "^7.6.10",
 		"@capacitor/app": "^7.1.2",
 		"@capacitor/core": "^7.6.10",
+		"@capacitor/filesystem": "^7.1.9",
 		"@capacitor/local-notifications": "^7.0.7",
 		"@capacitor/network": "^7.0.4",
-		"@capacitor/preferences": "^7.0.4"
+		"@capacitor/preferences": "^7.0.4",
+		"@capacitor/share": "^7.0.4",
+		"@capacitor/status-bar": "^7.0.6"
 	},
 	"devDependencies": {
 		"@capacitor/cli": "^7.6.10",
 		"@oberstufen-planer/abi-engine-bw": "workspace:*",
 		"@oberstufen-planer/app-core": "workspace:*",
+		"@oberstufen-planer/ui": "workspace:*",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"svelte": "^5.57.3",
 		"svelte-check": "^4.7.7",
