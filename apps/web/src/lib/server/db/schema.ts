@@ -195,3 +195,14 @@ export const appliedOps = sqliteTable('applied_ops', {
 	opId: text('op_id').primaryKey(),
 	appliedAt: integer('applied_at', { mode: 'timestamp_ms' }).notNull()
 });
+
+/**
+ * Since the redesign all user data is one document (see app-core `Data`). The tables above
+ * are only read once, to migrate an existing installation.
+ */
+export const userDocument = sqliteTable('user_document', {
+	id: integer('id').primaryKey(),
+	revision: integer('revision').notNull(),
+	data: text('data', { mode: 'json' }).notNull(),
+	updatedAt: integer('updated_at').notNull()
+});

@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
 	plugins: {
 		// Native HTTP: no CORS needed and http:// servers in the home network work too
 		CapacitorHttp: { enabled: true },
-		LocalNotifications: { smallIcon: 'ic_stat_notify', iconColor: '#15803d' }
+		LocalNotifications: { smallIcon: 'ic_stat_notify', iconColor: '#5B7BF0' }
 	}
 };
 

@@ -57,6 +57,13 @@
       "when": 1793467198507,
       "tag": "0007_weighting_data",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793734625695,
+      "tag": "0008_user_document",
+      "breakpoints": true
     }
   ]
 }

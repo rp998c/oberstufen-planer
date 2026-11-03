@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import AuthCard from '$lib/AuthCard.svelte';
 	import type { ActionData } from './$types';
 
 	let { form }: { form: ActionData } = $props();
@@ -8,8 +9,7 @@
 
 <svelte:head><title>Anmelden · Oberstufen-Planer</title></svelte:head>
 
-<section class="card login">
-	<h1>Anmelden</h1>
+<AuthCard title="Anmelden">
 	<form
 		method="POST"
 		use:enhance={() => {
@@ -20,32 +20,21 @@
 			};
 		}}
 	>
-		<label for="password">Passwort</label>
-		<!-- svelte-ignore a11y_autofocus -->
-		<input
-			id="password"
-			name="password"
-			type="password"
-			autocomplete="current-password"
-			required
-			autofocus
-		/>
-		{#if form?.error}<p class="error" role="alert">{form.error}</p>{/if}
-		<button type="submit" disabled={submitting}>{submitting ? 'Prüfe …' : 'Anmelden'}</button>
+		<label class="field">
+			<span>Passwort</span>
+			<!-- svelte-ignore a11y_autofocus -->
+			<input
+				class="input"
+				name="password"
+				type="password"
+				autocomplete="current-password"
+				required
+				autofocus
+			/>
+		</label>
+		{#if form?.error}<p class="error-text" role="alert">{form.error}</p>{/if}
+		<button class="btn accent big" type="submit" disabled={submitting}
+			>{submitting ? 'Prüfe …' : 'Anmelden'}</button
+		>
 	</form>
-</section>
-
-<style>
-	.login {
-		max-width: 22rem;
-		margin: 4rem auto;
-	}
-	form {
-		display: grid;
-		gap: 0.75rem;
-	}
-	.error {
-		color: var(--danger);
-		margin: 0;
-	}
-</style>
+</AuthCard>

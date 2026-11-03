@@ -1,5 +1,6 @@
-import { EVENT_KINDS, formatEventDate, parseLocal, type EventKind } from './calendar.ts';
-import type { EventRow } from './snapshot.ts';
+import { EVENT_KINDS, formatEventDate, parseLocal } from './calendar.ts';
+import type { EventKind } from './model.ts';
+import type { CalEvent as EventRow } from './model.ts';
 
 export interface PlannedNotification {
 	/** Stable 31-bit id derived from event and reminder, so rescheduling replaces it. */

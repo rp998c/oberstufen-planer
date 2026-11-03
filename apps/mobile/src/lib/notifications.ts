@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
-import { plannedNotifications, type EventRow } from '@oberstufen-planer/app-core';
+import { plannedNotifications, type CalEvent as EventRow } from '@oberstufen-planer/app-core';
 
 export async function notificationPermission(): Promise<'granted' | 'denied' | 'prompt'> {
 	try {
