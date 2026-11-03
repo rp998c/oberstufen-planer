@@ -151,7 +151,7 @@
 			await store.connect(server, password, device);
 			connectOpen = false;
 			password = '';
-			ui.notify('Verbunden');
+			if (!store.conflict) ui.notify('Verbunden');
 			void loadServerInfo();
 		} catch (err) {
 			connectError = err instanceof Error ? err.message : String(err);
