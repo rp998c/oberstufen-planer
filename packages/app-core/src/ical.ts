@@ -137,6 +137,27 @@ export interface FeedEvent {
 	reminders: number[];
 }
 
+/** Times in the feed are German local time (CET/CEST), so calendar apps anywhere show them right. */
+const BERLIN = [
+	'BEGIN:VTIMEZONE',
+	'TZID:Europe/Berlin',
+	'BEGIN:DAYLIGHT',
+	'TZOFFSETFROM:+0100',
+	'TZOFFSETTO:+0200',
+	'TZNAME:CEST',
+	'DTSTART:19700329T020000',
+	'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU',
+	'END:DAYLIGHT',
+	'BEGIN:STANDARD',
+	'TZOFFSETFROM:+0200',
+	'TZOFFSETTO:+0100',
+	'TZNAME:CET',
+	'DTSTART:19701025T030000',
+	'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU',
+	'END:STANDARD',
+	'END:VTIMEZONE'
+];
+
 export function buildIcal(events: FeedEvent[], now = new Date()): string {
 	const stamp = now
 		.toISOString()
@@ -147,7 +168,9 @@ export function buildIcal(events: FeedEvent[], now = new Date()): string {
 		'VERSION:2.0',
 		'PRODID:-//Oberstufen-Planer//DE',
 		'CALSCALE:GREGORIAN',
-		'X-WR-CALNAME:Oberstufen-Planer'
+		'X-WR-CALNAME:Oberstufen-Planer',
+		'X-WR-TIMEZONE:Europe/Berlin',
+		...BERLIN
 	];
 	for (const e of events) {
 		lines.push('BEGIN:VEVENT', `UID:${e.id}@oberstufen-planer`, `DTSTAMP:${stamp}`);
@@ -159,8 +182,8 @@ export function buildIcal(events: FeedEvent[], now = new Date()): string {
 				`DTEND;VALUE=DATE:${compact(toLocalDate(last))}`
 			);
 		} else {
-			lines.push(`DTSTART:${compact(e.start)}00`);
-			if (e.end) lines.push(`DTEND:${compact(e.end)}00`);
+			lines.push(`DTSTART;TZID=Europe/Berlin:${compact(e.start)}00`);
+			if (e.end) lines.push(`DTEND;TZID=Europe/Berlin:${compact(e.end)}00`);
 		}
 		lines.push(`SUMMARY:${escape(e.title)}`);
 		if (e.note) lines.push(`DESCRIPTION:${escape(e.note)}`);

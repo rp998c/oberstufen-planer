@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildIcal, parseIcal } from './ical.ts';
+import { feedEvents } from './feed.ts';
+import { emptyData, type CalEvent, type Data, type Subject } from './model.ts';
 
 const sample = [
 	'BEGIN:VCALENDAR',
@@ -118,5 +120,70 @@ describe('buildIcal', () => {
 		]);
 		expect(text.split('\r\n').every((l) => new TextEncoder().encode(l).length <= 75)).toBe(true);
 		expect(parseIcal(text)[0]!.title).toBe(title);
+	});
+});
+
+describe('feedEvents', () => {
+	const ev = (id: string, start: string, kind: CalEvent['kind'], title = 'Mathe'): CalEvent => ({
+		id,
+		subjectId: 'm',
+		title,
+		kind,
+		start,
+		end: null,
+		allDay: !start.includes('T'),
+		note: '',
+		reminders: [1440],
+		externalUid: null
+	});
+	const data: Data = {
+		...emptyData(),
+		subjects: [
+			{
+				id: 'm',
+				name: 'Mathe',
+				color: '#4C6EF5',
+				category: 'mathe',
+				level: 'LF',
+				exam: 'written',
+				fromClass8: false,
+				sortOrder: 0,
+				halfYears: [1, 2, 3, 4],
+				klausuren: 2,
+				tests: 'none',
+				weights: { schriftlich: 2, muendlich: 1, praktisch: 0 }
+			}
+		],
+		events: [
+			ev('b', '2026-12-01', 'klausur'),
+			ev('a', '2026-10-01', 'klausur', 'Analysis'),
+			ev('c', '2026-11-05', 'gfs'),
+			ev('d', '2026-11-06T09:30', 'test')
+		]
+	};
+
+	it('names Klausuren "Fach Klausur x/n" and puts them in the school day', () => {
+		const out = feedEvents(data);
+		expect(out.map((e) => e.title)).toEqual([
+			'Mathe Klausur 2/8',
+			'Mathe Klausur 1/8 – Analysis',
+			'Mathe GFS',
+			'Mathe Test'
+		]);
+		expect(out[0]).toMatchObject({
+			start: '2026-12-01T08:00',
+			end: '2026-12-01T14:00',
+			allDay: false,
+			reminders: [1920]
+		});
+		expect(out[3]).toMatchObject({ start: '2026-11-06T09:30', end: null, reminders: [1440] });
+	});
+
+	it('writes times in German time', () => {
+		const text = buildIcal(feedEvents(data));
+		expect(text).toContain('DTSTART;TZID=Europe/Berlin:20261201T080000');
+		expect(text).toContain('DTEND;TZID=Europe/Berlin:20261201T140000');
+		expect(text).toContain('TZID:Europe/Berlin');
+		expect(parseIcal(text)[0]).toMatchObject({ start: '2026-12-01T08:00', allDay: false });
 	});
 });

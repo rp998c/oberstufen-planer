@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { timingSafeEqual } from 'node:crypto';
-import { buildIcal } from '@oberstufen-planer/app-core';
+import { buildIcal, feedEvents } from '@oberstufen-planer/app-core';
 import { getFeedToken, getSnapshot } from '$lib/server/document.ts';
 import { getDb } from '$lib/server/instance.ts';
 import type { RequestHandler } from './$types';
@@ -12,15 +12,7 @@ export const GET: RequestHandler = ({ params }) => {
 	const expected = Buffer.from(getFeedToken(db));
 	if (given.length !== expected.length || !timingSafeEqual(given, expected))
 		error(404, 'Not found');
-	const data = getSnapshot(db).data;
-	const name = (id: string | null) => data.subjects.find((s) => s.id === id)?.name;
-	const events = data.events.map((e) => ({
-		...e,
-		title:
-			name(e.subjectId) && e.title !== name(e.subjectId)
-				? `${name(e.subjectId)}: ${e.title}`
-				: e.title
-	}));
+	const events = feedEvents(getSnapshot(db).data);
 	return new Response(buildIcal(events), {
 		headers: {
 			'Content-Type': 'text/calendar; charset=utf-8',
