@@ -4,5 +4,6 @@ export * from './calc.ts';
 export * from './legacy.ts';
 export * from './presets.ts';
 export * from './ical.ts';
+export * from './feed.ts';
 export * from './notifications.ts';
 export * from './calendar.ts';

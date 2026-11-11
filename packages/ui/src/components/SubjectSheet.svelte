@@ -200,6 +200,19 @@
 						onclick={() => (color = c)}
 					></button>
 				{/each}
+				<label
+					class="sw custom"
+					class:on={!SUBJECT_COLORS.includes(color)}
+					style:background={SUBJECT_COLORS.includes(color) ? null : color}
+					title="Eigene Farbe"
+				>
+					<input
+						type="color"
+						value={color}
+						oninput={(e) => (color = e.currentTarget.value.toUpperCase())}
+						aria-label="Eigene Farbe wählen"
+					/>
+				</label>
 			</div>
 		</div>
 		{#if error}<p class="error-text" role="alert">{error}</p>{/if}
@@ -240,6 +253,16 @@
 		height: 28px;
 		border-radius: 50%;
 		border: 0;
+		cursor: pointer;
+	}
+	.sw.custom {
+		position: relative;
+		background: conic-gradient(#e5484d, #f5a524, #46a758, #12a594, #3e63dd, #8e4ec6, #e5484d);
+	}
+	.sw.custom input {
+		position: absolute;
+		inset: 0;
+		opacity: 0;
 		cursor: pointer;
 	}
 	.sw.on {

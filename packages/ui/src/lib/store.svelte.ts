@@ -31,6 +31,8 @@ export interface Prefs {
 	collapsed: boolean;
 	/** The first-start screen was passed (app). */
 	started: boolean;
+	/** Reminders chosen for the last new calendar entry (default for the next one). */
+	reminders: number[];
 }
 
 const DEFAULT_PREFS: Prefs = {
@@ -38,7 +40,8 @@ const DEFAULT_PREFS: Prefs = {
 	accent: 'blau',
 	icon: 'A',
 	collapsed: false,
-	started: false
+	started: false,
+	reminders: [1440]
 };
 
 interface SyncResponse {

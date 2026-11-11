@@ -26,7 +26,7 @@
 	// svelte-ignore state_referenced_locally
 	let day = $state(e0?.start.slice(0, 10) ?? date ?? todayLocal());
 	let time = $state(e0 && !e0.allDay ? e0.start.slice(11, 16) : '');
-	let reminders = $state<number[]>(e0?.reminders ?? [1440]);
+	let reminders = $state<number[]>(e0?.reminders ?? [...store.prefs.reminders]);
 	let note = $state(e0?.note ?? '');
 	let error = $state('');
 
@@ -61,6 +61,7 @@
 					externalUid: e0?.externalUid ?? null
 				}
 			});
+			if (!e0) store.savePrefs({ reminders: $state.snapshot(reminders) });
 			onclose();
 		} catch (err) {
 			error = err instanceof OpError ? err.message : String(err);
