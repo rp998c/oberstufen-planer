@@ -36,6 +36,29 @@
 		await store.platform.setAppIcon?.(icon).catch(() => undefined);
 	}
 
+	// ---- app updates (Android) -------------------------------------------------------------
+	let checking = $state(false);
+	let updateMsg = $state('');
+	async function checkUpdate() {
+		checking = true;
+		updateMsg = '';
+		try {
+			if (!(await store.checkUpdate(true))) ui.notify('Die App ist aktuell.');
+		} catch (e) {
+			updateMsg = e instanceof Error ? e.message : String(e);
+		} finally {
+			checking = false;
+		}
+	}
+	async function installUpdate() {
+		updateMsg = '';
+		try {
+			await store.installUpdate();
+		} catch (e) {
+			updateMsg = e instanceof Error ? e.message : String(e);
+		}
+	}
+
 	// ---- Abitur year --------------------------------------------------------------------
 	let abiYear = $state('');
 	$effect(() => {
@@ -366,6 +389,37 @@
 					>
 				</div>
 			{/if}
+		</section>
+	{/if}
+
+	{#if store.platform.updates}
+		<section class="card" aria-labelledby="upd-h">
+			<h2 id="upd-h" class="card-title sh">App-Version</h2>
+			<div class="row">
+				<span
+					>{store.appVersion?.name ?? '…'}
+					<span class="muted"
+						>· {store.updating !== null
+							? `Update lädt ${store.updating >= 0 ? store.updating + ' %' : '…'}`
+							: store.update
+								? `Version ${store.update.name} verfügbar`
+								: 'sucht automatisch nach Updates'}</span
+					></span
+				>
+				{#if store.update}
+					<button
+						class="btn accent"
+						type="button"
+						disabled={store.updating !== null}
+						onclick={installUpdate}>Installieren</button
+					>
+				{:else}
+					<button class="btn" type="button" disabled={checking} onclick={checkUpdate}
+						>Jetzt prüfen</button
+					>
+				{/if}
+			</div>
+			{#if updateMsg}<p class="row msg warn-text">{updateMsg}</p>{/if}
 		</section>
 	{/if}
 
