@@ -25,8 +25,23 @@ export interface Platform {
 	canPrint: boolean;
 	/** Android: status bar colours for the current theme. */
 	setTheme?(dark: boolean): Promise<void>;
+	/** Android: app updates from the GitHub release. */
+	updates?: Updates;
 	/** Web: back to the login page after the session expired. */
 	onUnauthorized?(): void;
+}
+
+export interface AppVersion {
+	code: number;
+	name: string;
+}
+
+export interface Updates {
+	current(): Promise<AppVersion>;
+	/** Version of the newest published APK. */
+	latest(): Promise<AppVersion>;
+	/** Downloads the newest APK and opens the Android installer. */
+	install(onProgress: (percent: number) => void): Promise<void>;
 }
 
 /** Browser download / file picker (web). */

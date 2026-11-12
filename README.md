@@ -91,6 +91,12 @@ Sync lässt sich jederzeit unter **Einstellungen → Sync** einschalten (Adresse
 Handy und Server beim Verbinden schon Daten, fragt die App, welche gelten sollen. Angemeldete Handys
 stehen im Browser unter **Einstellungen → Geräte & Sync**.
 
+**Updates:** Die App schaut beim Start (und wenn sie wieder geöffnet wird) nach einer neuen Version
+und zeigt dann oben **Update … · Installieren**. Ein Tipp lädt die neue APK und öffnet den
+Android-Installer; beim ersten Mal fragt Android, ob die App Updates installieren darf. Ganz ohne
+Bestätigung installieren darf Android eine App außerhalb des Play Store nicht. Version und
+**Jetzt prüfen** stehen unter **Einstellungen → App-Version**.
+
 ### Kalender-Abo
 
 Unter **Einstellungen → Kalender** steht eine geheime Adresse (`…/kalender/feed/<token>.ics`), die du im Kalender deines Handys abonnieren kannst. Sie funktioniert ohne Anmeldung – also nicht weitergeben. Bei Bedarf lässt sich eine neue Adresse erzeugen.

@@ -12,7 +12,7 @@ import {
 	type Snapshot
 } from '@oberstufen-planer/app-core';
 import { ApiError, OfflineError, normaliseServerUrl, request } from './api.ts';
-import type { Platform } from './platform.ts';
+import type { AppVersion, Platform } from './platform.ts';
 
 export interface Connection {
 	/** '' = same origin (web). */
@@ -80,6 +80,13 @@ export class AppStore {
 	/** Server and phone both have data after connecting: the user decides which to keep. */
 	conflict = $state<Snapshot | null>(null);
 	today = $state(todayLocal());
+	/** Android: installed version and a newer published one, if any. */
+	appVersion = $state<AppVersion | null>(null);
+	update = $state<AppVersion | null>(null);
+	/** Download progress in percent while updating (-1 = unknown size). */
+	updating = $state<number | null>(null);
+	updateDismissed = $state(false);
+	#lastUpdateCheck = 0;
 
 	data = $derived(this.snapshot.data);
 	views = $derived(subjectViews(this.snapshot.data));
@@ -118,6 +125,7 @@ export class AppStore {
 		}
 		this.status = this.connection ? 'syncing' : 'local';
 		this.ready = true;
+		void this.checkUpdate();
 		if (this.connection) await this.sync();
 		setInterval(() => (this.today = todayLocal()), 60_000);
 	}
@@ -299,6 +307,37 @@ export class AppStore {
 		this.snapshot = { ...this.snapshot, revision: 0 };
 		await this.platform.remove(KEYS.conn);
 		await this.#persist();
+	}
+
+	/**
+	 * Android: looks for a newer APK (at start and when the app comes back, at most every
+	 * 6 hours unless `manual`). Returns true if one is available.
+	 */
+	async checkUpdate(manual = false): Promise<boolean> {
+		const u = this.platform?.updates;
+		if (!u) return false;
+		if (!manual && Date.now() - this.#lastUpdateCheck < 6 * 3600_000) return !!this.update;
+		this.#lastUpdateCheck = Date.now();
+		try {
+			this.appVersion ??= await u.current();
+			const latest = await u.latest();
+			this.update = latest.code > this.appVersion.code ? latest : null;
+		} catch (e) {
+			if (manual) throw e;
+		}
+		return !!this.update;
+	}
+
+	/** Android: downloads the update and opens the installer (the user confirms there). */
+	async installUpdate() {
+		const u = this.platform?.updates;
+		if (!u || this.updating !== null) return;
+		this.updating = 0;
+		try {
+			await u.install((p) => (this.updating = p));
+		} finally {
+			this.updating = null;
+		}
 	}
 
 	/** Replaces everything (restore from a backup file). */

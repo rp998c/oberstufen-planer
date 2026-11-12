@@ -108,6 +108,16 @@
 			store.savePrefs({ collapsed: !collapsed });
 		}
 	}
+
+	let updateError = $state('');
+	async function runUpdate() {
+		updateError = '';
+		try {
+			await store.installUpdate();
+		} catch (e) {
+			updateError = e instanceof Error ? e.message : String(e);
+		}
+	}
 </script>
 
 <svelte:window onkeydown={onKey} />
@@ -172,6 +182,28 @@
 						<span
 							>{store.message} <a href={href({ name: 'settings' })}>Zu den Einstellungen</a></span
 						>
+					</div>
+				{/if}
+				{#if store.update && !store.updateDismissed && router.route.name !== 'settings'}
+					<div class="banner ok top update" role="status">
+						<Icon name="download" />
+						<span class="grow"
+							><strong class="w600">Update {store.update.name}</strong>
+							{#if store.updating !== null}<span
+									>· {store.updating >= 0 ? `${store.updating} %` : 'lädt …'}</span
+								>{/if}{#if updateError}<br /><span class="error-text">{updateError}</span
+								>{/if}</span
+						>
+						{#if store.updating === null}
+							<button class="btn accent" type="button" onclick={runUpdate}>Installieren</button>
+							<button
+								class="x"
+								type="button"
+								aria-label="Später"
+								title="Später"
+								onclick={() => (store.updateDismissed = true)}><Icon name="close" /></button
+							>
+						{/if}
 					</div>
 				{/if}
 				{#if router.route.name === 'overview'}<Overview onadd={() => (quickAdd = true)} />
@@ -315,6 +347,25 @@
 	}
 	.top {
 		margin-bottom: 16px;
+	}
+	.update {
+		align-items: center;
+		padding: 8px 8px 8px 14px;
+	}
+	.update .grow {
+		flex: 1;
+		min-width: 0;
+	}
+	.update .x {
+		display: grid;
+		place-items: center;
+		width: 36px;
+		height: 36px;
+		border: 0;
+		background: none;
+		color: inherit;
+		cursor: pointer;
+		border-radius: 8px;
 	}
 	.tabs {
 		position: fixed;
